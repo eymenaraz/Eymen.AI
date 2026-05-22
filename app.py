@@ -1,53 +1,73 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. Arayüz ve Tasarım
+# Sayfa Yapılandırması
 st.set_page_config(page_title="Eymen AI", page_icon="⚡", layout="centered")
 
+# CSS: Modern, minimalist ve sisteme (Dark/Light) tam uyumlu
 st.markdown("""
     <style>
-    .stApp { background-color: #f8f9fa; }
-    h1 { color: #1e1e1e; font-family: 'Arial', sans-serif; text-align: center; margin-bottom: 20px; }
-    [data-testid="stChatMessage"] { border-radius: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    /* Chat giriş kutusu için sabit konum */
+    .stChatInput { position: fixed; bottom: 20px; }
+    
+    /* Mesaj kartlarını sistem rengine uyumlu yap */
+    [data-testid="stChatMessage"] {
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 10px;
+    }
+    
+    /* Başlık stili */
+    .title-text {
+        font-size: 2rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 20px;
+        color: inherit;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("⚡ Eymen AI")
+# Başlık
+st.markdown("<div class='title-text'>⚡ Eymen AI</div>", unsafe_allow_html=True)
 
-# 2. Bağlantı Ayarları (API Anahtarını Streamlit Secrets kısmına ekle!)
+# API Bağlantısı (Secrets üzerinden)
 try:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 except Exception:
-    st.error("API Anahtarı bulunamadı! Lütfen Streamlit Settings > Secrets kısmına GOOGLE_API_KEY ekle.")
+    st.error("API Anahtarı hatası! Lütfen Streamlit ayarlarından 'GOOGLE_API_KEY' secret'ını kontrol et.")
     st.stop()
 
-# 3. Model Kimliği (System Instruction)
-system_prompt = "Sen Eymen AI'sin. Eymen tarafından geliştirildin. Kullanıcı sana 'Eymen AI', 'Eymen', 'Eym' gibi isimlerle seslenebilir. Modern, hızlı, yardımsever ve zekisin."
-
+# Model Tanımı
 if "model" not in st.session_state:
     st.session_state.model = genai.GenerativeModel(
         model_name='gemini-2.5-flash',
-        system_instruction=system_prompt
+        system_instruction="Sen Eymen AI'sin. Modern, zeki, hızlı ve nazik bir asistansın. Kullanıcı sana Eymen AI, Eym veya Eymen diyebilir."
     )
 
-# 4. Sohbet Geçmişi
+# Sohbet Geçmişi
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Mesajları göster
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-# 5. Sohbet Akışı
-if prompt := st.chat_input("Eymen AI'ye bir şey sor..."):
+# Sohbet girişi (En altta sabit)
+if prompt := st.chat_input("Mesajını yaz, Eymen AI yanıtlasın..."):
+    # Kullanıcı mesajı
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.write(prompt)
 
+    # AI Yanıtı
     with st.chat_message("assistant"):
-        try:
-            response = st.session_state.model.generate_content(prompt)
-            st.write(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
-        except Exception as e:
-            st.error("Bir hata oluştu, lütfen tekrar dene.")
+        with st.spinner("Düşünüyor..."):
+            try:
+                response = st.session_state.model.generate_content(prompt)
+                full_response = response.text
+                st.write(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+            except Exception as e:
+                st.error("Bağlantı hatası: Anahtarını ve internetini kontrol et.")

@@ -1,72 +1,44 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Eymen AI", page_icon="🤖", layout="centered")
+# Arayüz ayarları
+st.set_page_config(page_title="Eymen AI", layout="centered")
 
-# --- MODERN VE ADAPTİF TASARIM (DARK/LIGHT MOD UYUMLU) ---
-st.markdown("""
-    <style>
-    /* Ana başlık stili */
-    .stApp h1 {
-        font-family: 'Segoe UI', sans-serif;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    
-    /* Mesaj balonları için modern gölge ve kenarlık */
-    [data-testid="stChatMessage"] {
-        border-radius: 20px;
-        padding: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    
-    /* Yazı kutusu stili */
-    .stChatInput {
-        border-radius: 20px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# API Anahtarı
+genai.configure(api_key="AIzaSyCY_ZsASlHUCQ6h7NA9ETnfHz2QcslNL6E")
 
-# --- BAŞLIK ---
-st.title("🤖 Eymen AI")
-st.markdown("<p style='text-align: center;'>Modern ve Hızlı Yapay Zeka Deneyimi</p>", unsafe_allow_html=True)
+# KİMLİK TANIMI (System Instruction)
+# Modelin her zaman Eymen AI olduğunu bilmesini sağlıyoruz
+system_instruction = """Sen Eymen AI'sin. 
+Kullanıcı sana 'Eymen AI', 'Eymen', 'Eym' veya benzeri isimlerle hitap edebilir. 
+Sen Eymen tarafından yaratılmış, hızlı ve modern bir yapay zekasın. 
+Kendini her zaman Eymen AI olarak tanıt ve bu kimlikle cevap ver."""
 
-# --- BAĞLANTI AYARLARI ---
-API_KEY = "AIzaSyCY_ZsASlHUCQ6h7NA9ETnfHz2QcslNL6E"
-MODEL_NAME = "models/gemini-2.5-flash"
+# Modeli kimlik ile tanımla
+if "model" not in st.session_state:
+    st.session_state.model = genai.GenerativeModel(
+        model_name='gemini-2.5-flash',
+        system_instruction=system_instruction
+    )
 
-try:
-    genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel(MODEL_NAME)
-except Exception as e:
-    st.error(f"Sistem başlatılamadı: {e}")
+st.title("⚡ Eymen AI")
 
-# --- SOHBET MANTIĞI ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Geçmişi listele
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Mesajları göster
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
 
 # Kullanıcı girişi
-if prompt := st.chat_input("Mesajını buraya yaz..."):
+if prompt := st.chat_input("Eymen AI ile konuş..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.markdown(prompt)
+        st.write(prompt)
 
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
-        try:
-            # Yanıtı parça parça (stream) alarak daha profesyonel bir his veriyoruz
-            response = model.generate_content(prompt, stream=True)
-            for chunk in response:
-                full_response += chunk.text
-                message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-        except Exception as e:
-            st.error("Bir hata oluştu, lütfen sayfayı yenile.")
+        # Model artık kim olduğunu biliyor
+        response = st.session_state.model.generate_content(prompt)
+        st.write(response.text)
+        st.session_state.messages.append({"role": "assistant", "content": response.text})

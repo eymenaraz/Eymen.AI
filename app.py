@@ -10,8 +10,8 @@ API_KEY = "AIzaSyCY_ZsASlHUCQ6h7NA9ETnfHz2QcslNL6E"
 
 try:
     genai.configure(api_key=API_KEY)
-    # Hata veren model ismini 'gemini-1.5-flash' yerine en güncel ve kararlı sürümle değiştiriyoruz
-    model = genai.GenerativeModel('gemini-1.5-flash') 
+    # 404 hatasını önlemek için '-latest' takısını ekledik
+    model = genai.GenerativeModel('gemini-1.5-flash-latest') 
 except Exception as e:
     st.error(f"Sistem Hatası: {e}")
 
@@ -29,11 +29,11 @@ if prompt := st.chat_input("Eymen AI'ye bir şey sor..."):
 
     with st.chat_message("assistant"):
         try:
-            # Model ismini burada da açıkça belirtelim
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            # Buradaki model ismini de güncelledik
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
             response = model.generate_content(prompt)
             st.markdown(response.text)
             st.session_state.messages.append({"role": "assistant", "content": response.text})
         except Exception as e:
-            st.error("Bir sorun oluştu. Lütfen yeni bir API anahtarı oluşturup tekrar dene.")
+            st.error("API veya Bağlantı Hatası oluştu.")
             st.write(f"Hata detayı: {e}")

@@ -8,8 +8,8 @@ st.set_page_config(page_title="Eymen AI", layout="centered")
 try:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     model = genai.GenerativeModel('gemini-2.5-flash')
-except Exception as e:
-    st.error("API yapılandırma hatası!")
+except Exception:
+    st.error("API Anahtarı hatası!")
     st.stop()
 
 st.title("⚡ Eymen AI")
@@ -27,14 +27,17 @@ if prompt := st.chat_input("Eymen AI'ye sor..."):
         st.write(prompt)
 
     with st.chat_message("assistant"):
-        try:
-            # İstek gönder
-            response = model.generate_content(prompt)
-            st.write(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
-        except Exception as e:
-            # Kota dolduğunda kullanıcıya bunu söyle
-            if "ResourceExhausted" in str(e):
-                st.warning("⚠️ Şu an çok fazla istek var. Lütfen 1 dakika bekleyip tekrar dene.")
-            else:
-                st.error("Bir hata oluştu.")
+        # Kota Yönetimi: İstek atarken hata alırsa bekle ve tekrar dene
+        for attempt in range(3): # 3 kez tekrar deneme hakkı
+            try:
+                response = model.generate_content(prompt)
+                st.write(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                break 
+            except Exception as e:
+                if "ResourceExhausted" in str(e):
+                    time.sleep(2) # 2 saniye bekle ve tekrar dene
+                    continue 
+                else:
+                    st.error("Bağlantı hatası.")
+                    break

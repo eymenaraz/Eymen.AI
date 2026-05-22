@@ -1,22 +1,28 @@
 import streamlit as st
 import google.generativeai as genai
-import time
+import random
 
 st.set_page_config(page_title="Eymen AI", layout="centered")
 
-# API Anahtarı
-try:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    model = genai.GenerativeModel('gemini-2.5-flash')
-except Exception:
-    st.error("API Anahtarı hatası!")
-    st.stop()
+# API Anahtarlarını buraya liste halinde yaz
+API_KEYS = [
+    st.secrets["AIzaSyCgMHSn5X2jIRw6Xth_kTQUrzy7LaTwyHE"],
+    st.secrets["AIzaSyARKOES_6-qLyp9lB6V01Y0SAQ_Rz3xQoM"],
+    st.secrets["AIzaSyAw2q-ZpGwh7yS52EzKdqd2LXyLSslVq4o"]
+]
+
+def get_model():
+    """Rastgele bir API anahtarı seçer ve modeli başlatır."""
+    key = random.choice(API_KEYS)
+    genai.configure(api_key=key)
+    return genai.GenerativeModel('gemini-2.5-flash')
 
 st.title("⚡ Eymen AI")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Mesajları göster
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
@@ -27,17 +33,13 @@ if prompt := st.chat_input("Eymen AI'ye sor..."):
         st.write(prompt)
 
     with st.chat_message("assistant"):
-        # Kota Yönetimi: İstek atarken hata alırsa bekle ve tekrar dene
-        for attempt in range(3): # 3 kez tekrar deneme hakkı
-            try:
-                response = model.generate_content(prompt)
-                st.write(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-                break 
-            except Exception as e:
-                if "ResourceExhausted" in str(e):
-                    time.sleep(2) # 2 saniye bekle ve tekrar dene
-                    continue 
-                else:
-                    st.error("Bağlantı hatası.")
-                    break
+        try:
+            model = get_model() # Her mesajda yeni bir anahtar seçer
+            response = model.generate_content(prompt)
+            st.write(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+        except Exception as e:
+            if "ResourceExhausted" in str(e):
+                st.error("⚠️ Kotan doldu, lütfen biraz bekle.")
+            else:
+                st.error("Bir hata oluştu.")

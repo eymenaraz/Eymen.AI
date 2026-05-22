@@ -4,16 +4,13 @@ import random
 
 st.set_page_config(page_title="Eymen AI", layout="centered")
 
-# API Anahtarlarını buraya liste halinde yaz
-API_KEYS = [
-    st.secrets["AIzaSyCgMHSn5X2jIRw6Xth_kTQUrzy7LaTwyHE"],
-    st.secrets["AIzaSyARKOES_6-qLyp9lB6V01Y0SAQ_Rz3xQoM"],
-    st.secrets["AIzaSyAw2q-ZpGwh7yS52EzKdqd2LXyLSslVq4o"]
-]
-
+# API Anahtarlarını tanımla
 def get_model():
-    """Rastgele bir API anahtarı seçer ve modeli başlatır."""
-    key = random.choice(API_KEYS)
+    # Secrets'taki isimleri burada çağırıyoruz
+    keys = [st.secrets["KEY_1"], st.secrets["KEY_2"], st.secrets["KEY_3"]]
+    
+    # Rastgele bir anahtar seç
+    key = random.choice(keys)
     genai.configure(api_key=key)
     return genai.GenerativeModel('gemini-2.5-flash')
 
@@ -34,12 +31,13 @@ if prompt := st.chat_input("Eymen AI'ye sor..."):
 
     with st.chat_message("assistant"):
         try:
-            model = get_model() # Her mesajda yeni bir anahtar seçer
+            # Modeli çağır
+            model = get_model()
             response = model.generate_content(prompt)
             st.write(response.text)
             st.session_state.messages.append({"role": "assistant", "content": response.text})
         except Exception as e:
             if "ResourceExhausted" in str(e):
-                st.error("⚠️ Kotan doldu, lütfen biraz bekle.")
+                st.error("⚠️ Kotan doldu! Lütfen sayfayı 1-2 dakika sonra yenile.")
             else:
-                st.error("Bir hata oluştu.")
+                st.error("Bir hata oluştu, lütfen tekrar dene.")

@@ -1,32 +1,22 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Eymen AI", page_icon="🤖", layout="centered")
+# Sayfa ayarları
+st.set_page_config(page_title="Eymen AI", page_icon="🤖")
 
-# --- MODERN TASARIM ---
-st.markdown("""
-    <style>
-    .stApp { background-color: #FFFFFF; }
-    h1 { color: #40E0D0 !important; font-family: sans-serif; text-align: center; }
-    [data-testid="stChatMessage"] { background-color: #F0F8FF; border-radius: 15px; padding: 10px; margin-bottom: 10px; }
-    </style>
-    """, unsafe_allow_html=True)
+st.markdown("<h1 style='color: #40E0D0; text-align: center;'>✨ Eymen AI</h1>", unsafe_allow_html=True)
 
-st.title("✨ Eymen AI")
+# API Anahtarı
+API_KEY = "AIzaSyBmYhJCNrzfg7WFMuhjGiUPc9jxaMG0rbo"
 
-# --- API AYARLARI (GÜÇLENDİRİLMİŞ) ---
-# Kendi anahtarını buraya sabitliyoruz ki hata payı kalmasın
-API_KEY = "AIzaSyCPQanGNqt9zxU4fvib3EjRkL__J9UDgEE"
-
+# Bağlantı denemesi
 try:
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
-    st.error("Sistem yapılandırma hatası. Lütfen sayfayı yenile.")
-    st.stop()
+    st.error(f"API Yapılandırma Hatası: {e}")
 
-# --- SOHBET GEÇMİŞİ ---
+# Sohbet geçmişi
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -34,22 +24,17 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- SOHBET ALANI ---
+# Kullanıcı girişi
 if prompt := st.chat_input("Eymen AI'ye bir şey sor..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
         try:
-            # Yapay zeka ile bağlantı
-            response = model.generate_content(prompt, stream=True)
-            for chunk in response:
-                full_response += chunk.text
-                message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-        except Exception:
-            st.warning("İnternet veya servis hatası oluştu. Lütfen tekrar dene.")
+            response = model.generate_content(prompt)
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+        except Exception as e:
+            st.error("Bağlantı hatası: API anahtarını kontrol et veya ağını kontrol et.")
+            st.write(f"Detay: {e}")

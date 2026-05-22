@@ -1,61 +1,55 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- AYARLAR ---
+# --- SAYFA AYARLARI ---
 st.set_page_config(page_title="Eymen AI", page_icon="🤖", layout="centered")
 
-# API Anahtarını buraya entegre ettim
-API_ANAHTARI = "AIzaSyCPQanGNqt9zxU4fvib3EjRkL__J9UDgEE"
-
-genai.configure(api_key=API_ANAHTARI)
-model = genai.GenerativeModel('gemini-1.5-flash')
-
-# --- ŞIK TASARIM (CSS) ---
+# --- MODERN TASARIM ---
 st.markdown("""
     <style>
-    /* Arka plan ve genel yazı */
     .stApp { background-color: #FFFFFF; }
-    
-    /* Başlık stili */
-    h1 { color: #40E0D0; text-align: center; font-family: sans-serif; font-weight: 800; }
-    
-    /* Buton stili */
-    div.stButton > button:first-child { 
-        background-color: #40E0D0; 
-        color: white; 
-        border-radius: 20px; 
-        border: none;
-        padding: 10px 25px;
-        width: 100%;
-        font-weight: bold;
-    }
-    
-    /* Giriş kutusu stili */
-    .stTextInput > div > div > input { 
-        border: 2px solid #40E0D0; 
-        border-radius: 10px; 
-        padding: 10px;
-    }
+    h1 { color: #40E0D0 !important; font-family: sans-serif; text-align: center; }
+    [data-testid="stChatMessage"] { background-color: #F0F8FF; border-radius: 15px; padding: 10px; margin-bottom: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- ARAYÜZ ---
 st.title("✨ Eymen AI")
-st.markdown("<p style='text-align: center; color: #7f8c8d;'>Modern, hızlı ve kişisel asistanın.</p>", unsafe_allow_html=True)
 
-# Boşluk bırakmak için
-st.write("---")
+# --- API AYARLARI (GÜÇLENDİRİLMİŞ) ---
+# Kendi anahtarını buraya sabitliyoruz ki hata payı kalmasın
+API_KEY = "AIzaSyCPQanGNqt9zxU4fvib3EjRkL__J9UDgEE"
 
-kullanici_mesaji = st.text_input("Sana nasıl yardımcı olabilirim?")
+try:
+    genai.configure(api_key=API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    st.error("Sistem yapılandırma hatası. Lütfen sayfayı yenile.")
+    st.stop()
 
-if st.button("Soruyu Gönder"):
-    if kullanici_mesaji:
-        with st.spinner("Eymen AI analiz ediyor..."):
-            try:
-                cevap = model.generate_content(kullanici_mesaji)
-                st.markdown("### 🤖 Eymen AI")
-                st.info(cevap.text)
-            except Exception as e:
-                st.error("Bir hata oluştu, lütfen internet bağlantını veya API anahtarını kontrol et.")
-    else:
-        st.warning("Lütfen bir soru yaz!")
+# --- SOHBET GEÇMİŞİ ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# --- SOHBET ALANI ---
+if prompt := st.chat_input("Eymen AI'ye bir şey sor..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        try:
+            # Yapay zeka ile bağlantı
+            response = model.generate_content(prompt, stream=True)
+            for chunk in response:
+                full_response += chunk.text
+                message_placeholder.markdown(full_response + "▌")
+            message_placeholder.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except Exception:
+            st.warning("İnternet veya servis hatası oluştu. Lütfen tekrar dene.")

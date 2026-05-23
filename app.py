@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 from datetime import datetime
+import pytz
 
 # --- AYARLAR ---
 LOGO_URL = "https://i.hizliresim.com/gvewvtj.png"
@@ -27,10 +28,10 @@ st.markdown(f"""
 
 st.markdown(f'<div style="text-align: center; margin-bottom: 25px;"><img src="{LOGO_URL}" width="250"></div>', unsafe_allow_html=True)
 
-# --- EYMEN AI MODELİ ---
 def get_model():
-    # Şu anki zamanı al
-    now = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    # Türkiye saatini dinamik olarak her çağrıda alıyoruz
+    tr_tz = pytz.timezone('Europe/Istanbul')
+    tr_time = datetime.now(tr_tz).strftime("%d-%m-%Y %H:%M:%S")
     
     keys = [st.secrets.get("KEY_1"), st.secrets.get("KEY_2"), st.secrets.get("KEY_3")]
     for key in keys:
@@ -39,12 +40,11 @@ def get_model():
                 genai.configure(api_key=key)
                 return genai.GenerativeModel(
                     model_name='gemini-2.5-flash',
-                    system_instruction=f"""Sen Eymen AI'sin. Bugünün tarihi ve saati: {now}. 
-                    Sen bir gündelik asistan ve yapay zekasın. 
-                    - Hava durumu, güncel olaylar gibi konularda bilgi sahibisin.
-                    - Kullanıcıya yardımcı ol, hızlı cevap ver.
-                    - Eğer görsel istenirse 'çiz' veya 'oluştur' komutlarını anla.
-                    - Tarih ve saati her an bildiğini unutma."""
+                    system_instruction=f"""Sen Eymen AI'sin. Şu an Türkiye saati ile {tr_time} tarihindeyiz.
+                    - Sorulara cevap verirken her zaman Türkiye saatini baz al.
+                    - Eğer dünya saati sorulursa, Türkiye saatini referans alarak hesapla ve bildir.
+                    - Gündelik işlerinde hızlı, zeki ve enerjik bir asistansın.
+                    - Görsel oluşturma taleplerini 'çiz' veya 'oluştur' komutlarıyla anında yerine getir."""
                 )
             except: continue
     return None
@@ -60,11 +60,10 @@ for msg in st.session_state.messages:
             st.markdown(msg["content"])
 
 # --- SOHBET VE ÇİZİM ---
-if prompt := st.chat_input("Eymen AI'ye sor (Tarih, Hava Durumu, Görsel...):"):
+if prompt := st.chat_input("Eymen AI'ye bir şey sor..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
 
-    # Görsel Oluşturma
     if any(keyword in prompt.lower() for keyword in ["çiz", "oluştur", "generate"]):
         with st.chat_message("assistant", avatar=avatar_to_use):
             img_prompt = prompt.replace("çiz", "").replace("oluştur", "").replace("generate", "").strip()

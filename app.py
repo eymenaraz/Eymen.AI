@@ -6,21 +6,20 @@ from PIL import Image
 
 # --- AYARLAR ---
 LOGO_URL = "https://i.hizliresim.com/gvewvtj.png"
-LIGHT_AVATAR = "https://i.hizliresim.com/8w6lqzo.png"
 DARK_AVATAR = "https://i.hizliresim.com/bsfo6dy.png"
+LIGHT_AVATAR = "https://i.hizliresim.com/8w6lqzo.png"
 
-st.set_page_config(page_title="Eymen AI", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Eymen AI", layout="centered")
 
-# --- CSS VE TEMA ---
-theme_base = st.get_option("theme.base")
-avatar_to_use = DARK_AVATAR if theme_base == "dark" else LIGHT_AVATAR
+# --- CSS (Artı Butonu ve Mobil Uyum) ---
 st.markdown("""
     <style>
-    [data-testid="chatAvatarIcon-user"], [data-testid="chatAvatarIcon-assistant"] { display: none !important; }
+    [data-testid="stFileUploader"] { margin-bottom: 10px; }
+    .stChatInput { margin-top: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown(f'<div style="text-align: center; margin-bottom: 25px;"><img src="{LOGO_URL}" width="250"></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="text-align: center;"><img src="{LOGO_URL}" width="200"></div>', unsafe_allow_html=True)
 
 # --- MODEL AYARLARI ---
 def get_model():
@@ -31,43 +30,46 @@ def get_model():
     genai.configure(api_key=key)
     return genai.GenerativeModel(
         model_name='gemini-2.5-flash',
-        system_instruction=f"Sen Eymen AI'sin. Tarih: {tr_time}. Hem metin hem görsel analiz yeteneğine sahip bir asistansın. Matematik problemlerini çözebilir, fotoğrafları inceleyebilirsin."
+        system_instruction=f"""Sen Eymen AI'sin. Şu an {tr_time}. 
+        Zeki, gerçekçi ve analitik bir asistansın. 
+        - Eğer bir fotoğraf yüklendiyse, onu çok dikkatli incele. 
+        - Emin değilsen veya fotoğraf belirsizse asla sallama, 'Fotoğraftan bunu net çıkaramadım' de.
+        - Matematik sorularında çözüm adımlarını göstererek ilerle. 
+        - Görsel oluştururken hızlı ve yaratıcı ol."""
     )
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- DOSYA YÜKLEME ---
-uploaded_file = st.file_uploader("Bir fotoğraf yükle (Matematik/Analiz):", type=["jpg", "jpeg", "png"])
+# --- ARAYÜZ ---
+uploaded_file = st.file_uploader("➕ Fotoğraf Ekle", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
 
-# --- MESAJLAŞMA VE ANALİZ ---
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"], avatar=avatar_to_use if msg["role"] == "assistant" else None):
+    with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input("Eymen AI'ye sor (Görsel oluştur veya yüklediğin görseli analiz et..."):
+if prompt := st.chat_input("Eymen AI'ye sor..."):
     model = get_model()
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
 
-    # 1. Fotoğraf Analizi (Matematik vb.)
-    if uploaded_file:
-        img = Image.open(uploaded_file)
-        with st.chat_message("assistant", avatar=avatar_to_use):
+    with st.chat_message("assistant"):
+        # 1. Fotoğraf varsa analiz et
+        if uploaded_file:
+            img = Image.open(uploaded_file)
+            st.image(img, width=200)
             response = model.generate_content([prompt, img])
             st.markdown(response.text)
             st.session_state.messages.append({"role": "assistant", "content": response.text})
-
-    # 2. Görsel Oluşturma
-    elif any(keyword in prompt.lower() for keyword in ["çiz", "oluştur", "generate"]):
-        with st.chat_message("assistant", avatar=avatar_to_use):
+            
+        # 2. Görsel oluşturma (Hızlı)
+        elif any(k in prompt.lower() for k in ["çiz", "oluştur", "generate"]):
             img_prompt = prompt.replace("çiz", "").replace("oluştur", "").replace("generate", "").strip()
-            img_url = f"https://pollinations.ai/p/{img_prompt}?width=512&height=512&nologo=true&seed=1"
-            st.markdown(f'<img src="{img_url}" style="width:100%; border-radius:10px;">', unsafe_allow_html=True)
+            img_url = f"https://pollinations.ai/p/{img_prompt}?width=512&height=512&nologo=true&seed=0"
+            st.markdown(f"![{img_prompt}]({img_url})")
             st.session_state.messages.append({"role": "assistant", "content": f"![Görsel]({img_url})"})
-    
-    # 3. Normal Sohbet
-    else:
-        with st.chat_message("assistant", avatar=avatar_to_use):
+            
+        # 3. Normal Analitik Cevap
+        else:
             response = model.generate_content(prompt)
             st.markdown(response.text)
             st.session_state.messages.append({"role": "assistant", "content": response.text})

@@ -1,14 +1,8 @@
 import streamlit as st
 import google.generativeai as genai
-from streamlit_theme import st_theme
 
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Eymen AI", page_icon="logo.png", layout="centered")
-
-# Temayı Algıla
-theme = st_theme()
-is_dark = theme and theme.get("base") == "dark"
-avatar_path = "profil_dark.png" if is_dark else "profil_light.png"
 
 # CSS: İkonları gizle ve modern tasarım
 st.markdown("""
@@ -34,7 +28,7 @@ def get_model():
         try:
             genai.configure(api_key=key)
             return genai.GenerativeModel(
-                model_name='gemini-2.0-flash', # Google API'de güncel model ismi
+                model_name='gemini-2.0-flash',
                 system_instruction="Sen Eymen AI'sin. Hızlı, modern ve enerjik bir yapay zekasın."
             )
         except:
@@ -46,8 +40,9 @@ if "messages" not in st.session_state:
 
 # Mesajları Görüntüle
 for msg in st.session_state.messages:
-    avatar = avatar_path if msg["role"] == "assistant" else None
-    with st.chat_message(msg["role"], avatar=avatar):
+    # Avatar seçimi: CSS veya JS ile tema kontrolü yerine basit bir mantık
+    avatar = "profil_light.png" 
+    with st.chat_message(msg["role"], avatar=avatar if msg["role"] == "assistant" else None):
         if msg.get("type") == "image":
             st.image(msg["content"])
         else:
@@ -59,9 +54,9 @@ if prompt := st.chat_input("Eymen AI'ye sor veya çizdir..."):
     with st.chat_message("user", avatar=None):
         st.markdown(prompt)
 
-    # Görsel Oluşturma (Çizdirme)
+    # Görsel Oluşturma
     if "çiz" in prompt.lower() or "oluştur" in prompt.lower():
-        with st.chat_message("assistant", avatar=avatar_path):
+        with st.chat_message("assistant", avatar="profil_light.png"):
             img_prompt = prompt.replace("çiz", "").replace("oluştur", "").strip()
             img_url = f"https://pollinations.ai/p/{img_prompt}?width=512&height=512&nologo=true"
             st.image(img_url)
@@ -69,7 +64,7 @@ if prompt := st.chat_input("Eymen AI'ye sor veya çizdir..."):
     
     # Sohbet
     else:
-        with st.chat_message("assistant", avatar=avatar_path):
+        with st.chat_message("assistant", avatar="profil_light.png"):
             message_placeholder = st.empty()
             full_response = ""
             try:

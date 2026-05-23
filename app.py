@@ -1,10 +1,10 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- AYARLAR ---
-LOGO_URL = "https://hizliresim.com/gvewvtj"
-LIGHT_AVATAR = "https://hizliresim.com/8w6lqzo"
-DARK_AVATAR = "https://hizliresim.com/bsfo6dy"
+# --- AYARLAR (Doğrudan Resim Linkleri) ---
+LOGO_URL = "https://i.hizliresim.com/gvewvtj.png"
+LIGHT_AVATAR = "https://i.hizliresim.com/8w6lqzo.png"
+DARK_AVATAR = "https://i.hizliresim.com/bsfo6dy.png"
 
 st.set_page_config(page_title="Eymen AI", layout="centered")
 
@@ -19,7 +19,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Başlık
+# Başlık (Logo)
 st.markdown(f'<div style="text-align: center;"><img src="{LOGO_URL}" width="150"></div>', unsafe_allow_html=True)
 
 # --- EYMEN AI MODELİ ---
@@ -29,12 +29,9 @@ def get_model():
     for key in keys:
         try:
             genai.configure(api_key=key)
-            # Eymen AI kişiliği ve çok dilli yetenek talimatı
             return genai.GenerativeModel(
-                model_name='gemini-2.0-flash', 
-                system_instruction="""Sen Eymen AI'sin. 
-                Hızlı, enerjik ve zekisin. Kullanıcının sorduğu dilde (Türkçe, İngilizce, Almanca vb.) akıcı ve 
-                doğal konuşursun. Karmaşık sorunları hızlı düşünür, net çözümler üretirsin."""
+                model_name='gemini-1.5-flash', 
+                system_instruction="Sen Eymen AI'sin. Hızlı, enerjik ve zekisin. Kullanıcının sorduğu dilde akıcı konuşur, karmaşık sorunları hızlıca çözersin."
             )
         except: continue
     return None
@@ -53,15 +50,13 @@ if prompt := st.chat_input("Eymen AI'ye sor veya bir şey çizdir..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar=None): st.markdown(prompt)
 
-    # Görsel Oluşturma Yeteneği
-    if "çiz" in prompt.lower() or "oluştur" in prompt.lower() or "generate" in prompt.lower():
+    if any(x in prompt.lower() for x in ["çiz", "oluştur", "generate"]):
         with st.chat_message("assistant", avatar=avatar_to_use):
             img_prompt = prompt.replace("çiz", "").replace("oluştur", "").replace("generate", "").strip()
             img_url = f"https://pollinations.ai/p/{img_prompt}?width=512&height=512&nologo=true"
             st.image(img_url)
             st.session_state.messages.append({"role": "assistant", "content": img_url, "type": "image"})
     
-    # Çok Dilli Hızlı Sohbet
     else:
         with st.chat_message("assistant", avatar=avatar_to_use):
             message_placeholder = st.empty()
@@ -76,6 +71,6 @@ if prompt := st.chat_input("Eymen AI'ye sor veya bir şey çizdir..."):
                     message_placeholder.markdown(full_response)
                     st.session_state.messages.append({"role": "assistant", "content": full_response})
                 except Exception:
-                    st.error("Eymen AI şu an düşünmekte zorlanıyor, tekrar dene!")
+                    st.error("Eymen AI düşünmekte zorlanıyor! API anahtarlarını kontrol et.")
             else:
-                st.error("API Anahtarı hatası.")
+                st.error("Model yüklenemedi. API anahtarlarını 'Secrets' kısmına eklediğinden emin ol.")

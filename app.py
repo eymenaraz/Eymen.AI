@@ -61,7 +61,7 @@ for msg in messages:
             else: st.markdown(msg["content"])
 
 # İŞLEM
-if prompt := st.chat_input(""):
+if prompt := st.chat_input("Eymen AI a birşeyler sor"):
     messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
 

@@ -1,3 +1,6 @@
 streamlit
 google-generativeai
 streamlit-theme
+streamlit
+google-generativeai
+pytz

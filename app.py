@@ -18,7 +18,7 @@ keys = [st.secrets["KEY_1"], st.secrets["KEY_2"], st.secrets["KEY_3"]]
 
 def get_model():
     # 2.5 veya 2.0 modelini burada belirtiyoruz
-    model_name = 'gemini-3.0-flash' 
+    model_name = 'gemini-2.5-flash' 
     genai.configure(api_key=keys[0]) # İlk anahtarla başla
     return genai.GenerativeModel(
         model_name=model_name,

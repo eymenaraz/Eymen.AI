@@ -1,7 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- AYARLAR (Doğrudan Resim Linkleri) ---
+# --- AYARLAR ---
 LOGO_URL = "https://i.hizliresim.com/gvewvtj.png"
 LIGHT_AVATAR = "https://i.hizliresim.com/8w6lqzo.png"
 DARK_AVATAR = "https://i.hizliresim.com/bsfo6dy.png"
@@ -19,21 +19,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Başlık (Logo)
+# Başlık
 st.markdown(f'<div style="text-align: center;"><img src="{LOGO_URL}" width="150"></div>', unsafe_allow_html=True)
 
 # --- EYMEN AI MODELİ ---
-keys = [st.secrets["KEY_1"], st.secrets["KEY_2"], st.secrets["KEY_3"]]
-
+# KEY_1, KEY_2, KEY_3'ün Streamlit Secrets'ta kayıtlı olduğundan emin ol!
 def get_model():
+    keys = [st.secrets.get("KEY_1"), st.secrets.get("KEY_2"), st.secrets.get("KEY_3")]
     for key in keys:
-        try:
-            genai.configure(api_key=key)
-            return genai.GenerativeModel(
-                model_name='gemini-1.5-flash', 
-                system_instruction="Sen Eymen AI'sin. Hızlı, enerjik ve zekisin. Kullanıcının sorduğu dilde akıcı konuşur, karmaşık sorunları hızlıca çözersin."
-            )
-        except: continue
+        if key:
+            try:
+                genai.configure(api_key=key)
+                return genai.GenerativeModel(
+                    model_name='gemini-1.5-flash', 
+                    system_instruction="Sen Eymen AI'sin. Hızlı, enerjik ve zekisin. Kullanıcının sorduğu dilde akıcı konuşur, karmaşık sorunları hızlıca çözersin."
+                )
+            except: continue
     return None
 
 if "messages" not in st.session_state: st.session_state.messages = []
@@ -46,7 +47,7 @@ for msg in st.session_state.messages:
         else: st.markdown(msg["content"])
 
 # --- SOHBET VE ÇİZİM ---
-if prompt := st.chat_input("Eymen AI'ye sor veya bir şey çizdir..."):
+if prompt := st.chat_input("Eymen AI'ye sor veya çizdir..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar=None): st.markdown(prompt)
 
@@ -70,7 +71,7 @@ if prompt := st.chat_input("Eymen AI'ye sor veya bir şey çizdir..."):
                         message_placeholder.markdown(full_response + "▌")
                     message_placeholder.markdown(full_response)
                     st.session_state.messages.append({"role": "assistant", "content": full_response})
-                except Exception:
-                    st.error("Eymen AI düşünmekte zorlanıyor! API anahtarlarını kontrol et.")
+                except Exception as e:
+                    st.error(f"Eymen AI hata verdi: {e}")
             else:
-                st.error("Model yüklenemedi. API anahtarlarını 'Secrets' kısmına eklediğinden emin ol.")
+                st.error("Model yüklenemedi! Secrets ayarlarını ve API anahtarlarını kontrol et.")

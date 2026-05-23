@@ -1,33 +1,32 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- OPTİMİZE EDİLMİŞ AYARLAR ---
+# --- AYARLAR ---
 LOGO_URL = "https://i.hizliresim.com/gvewvtj.png"
 LIGHT_AVATAR = "https://i.hizliresim.com/8w6lqzo.png"
 DARK_AVATAR = "https://i.hizliresim.com/bsfo6dy.png"
 
-# Mobil cihazlarda daha hızlı yüklenmesi için ayarlar
-st.set_page_config(
-    page_title="Eymen AI", 
-    layout="centered", 
-    initial_sidebar_state="collapsed"
-)
+st.set_page_config(page_title="Eymen AI", layout="centered", initial_sidebar_state="collapsed")
 
-# Tema Yönetimi
+# --- TEMA VE CSS (Seken Nokta Animasyonu) ---
 theme_base = st.get_option("theme.base")
 avatar_to_use = DARK_AVATAR if theme_base == "dark" else LIGHT_AVATAR
+dot_color = "#ffffff" if theme_base == "dark" else "#000000"
 
-st.markdown("""
+st.markdown(f"""
     <style>
-    /* İkonları gizle ve mobil için boşlukları optimize et */
-    [data-testid="chatAvatarIcon-user"], [data-testid="chatAvatarIcon-assistant"] { display: none !important; }
-    .stChatMessage { padding: 8px; }
-    /* Görsellerin mobil cihazda taşmaması için */
-    img { max-width: 100%; height: auto; }
+    [data-testid="chatAvatarIcon-user"], [data-testid="chatAvatarIcon-assistant"] {{ display: none !important; }}
+    
+    /* Seken Nokta Animasyonu */
+    .typing {{ display: flex; gap: 5px; margin-top: 10px; }}
+    .dot {{ width: 8px; height: 8px; background-color: {dot_color}; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }}
+    .dot:nth-child(1) {{ animation-delay: -0.32s; }}
+    .dot:nth-child(2) {{ animation-delay: -0.16s; }}
+    @keyframes bounce {{ 0%, 80%, 100% {{ transform: scale(0); }} 40% {{ transform: scale(1); }} }}
     </style>
 """, unsafe_allow_html=True)
 
-# Logo (Büyük ve şık)
+# Logo
 st.markdown(f'<div style="text-align: center; margin-bottom: 25px;"><img src="{LOGO_URL}" width="250"></div>', unsafe_allow_html=True)
 
 def get_model():
@@ -36,7 +35,10 @@ def get_model():
         if key:
             try:
                 genai.configure(api_key=key)
-                return genai.GenerativeModel('gemini-2.5-flash')
+                return genai.GenerativeModel(
+                    model_name='gemini-1.5-flash',
+                    system_instruction="Sen Eymen AI'sin. Hızlı, enerjik ve zekisin. Kullanıcının sorduğu dilde akıcı konuşur, karmaşık sorunları hızlıca çözersin."
+                )
             except: continue
     return None
 
@@ -50,22 +52,23 @@ for msg in st.session_state.messages:
         else:
             st.markdown(msg["content"])
 
-# --- HIZLI İŞLEM ---
+# --- SOHBET VE ÇİZİM ---
 if prompt := st.chat_input("Eymen AI'ye sor veya çizdir..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
 
-    # Görsel oluşturma (Hız optimizasyonu: width=300 yaparak yükleme süresini kısalttık)
     if any(keyword in prompt.lower() for keyword in ["çiz", "oluştur", "generate"]):
         with st.chat_message("assistant", avatar=avatar_to_use):
             img_prompt = prompt.replace("çiz", "").replace("oluştur", "").replace("generate", "").strip()
-            img_url = f"https://pollinations.ai/p/{img_prompt}?width=300&height=300&nologo=true&seed=42"
+            img_url = f"https://pollinations.ai/p/{img_prompt}?width=300&height=300&nologo=true"
             st.markdown(f'<img src="{img_url}" style="width:100%; border-radius:10px;">', unsafe_allow_html=True)
             st.session_state.messages.append({"role": "assistant", "content": img_url, "type": "image"})
-    
     else:
         with st.chat_message("assistant", avatar=avatar_to_use):
+            # Düşünürken Seken Noktalar
             placeholder = st.empty()
+            placeholder.markdown('<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>', unsafe_allow_html=True)
+            
             full_response = ""
             model = get_model()
             if model:
@@ -77,4 +80,6 @@ if prompt := st.chat_input("Eymen AI'ye sor veya çizdir..."):
                     placeholder.markdown(full_response)
                     st.session_state.messages.append({"role": "assistant", "content": full_response})
                 except Exception as e:
-                    st.error("Eymen AI hata verdi.")
+                    placeholder.markdown(f"Eymen AI hata verdi: {e}")
+            else:
+                placeholder.markdown("API Anahtarı bulunamadı!")

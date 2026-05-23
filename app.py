@@ -36,7 +36,7 @@ def get_model():
             try:
                 genai.configure(api_key=key)
                 return genai.GenerativeModel(
-                    model_name='gemini-1.5-flash',
+                    model_name='gemini-2.5-pro',
                     system_instruction="Sen Eymen AI'sin. Hızlı, enerjik ve zekisin. Kullanıcının sorduğu dilde akıcı konuşur, karmaşık sorunları hızlıca çözersin."
                 )
             except: continue

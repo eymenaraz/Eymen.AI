@@ -1,69 +1,84 @@
 import streamlit as st
 import google.generativeai as genai
-import time
+from streamlit_theme import st_theme
 
-# Sayfa ayarları
-st.set_page_config(page_title="Eymen AI", layout="centered", page_icon="⚡")
+# Sayfa Yapılandırması
+st.set_page_config(page_title="Eymen AI", page_icon="logo.png", layout="centered")
 
-# Özel CSS ile arayüzü şıklaştır (Figma gerekmez, doğrudan modern tasarım)
+# Temayı Algıla
+theme = st_theme()
+is_dark = theme and theme.get("base") == "dark"
+avatar_path = "profil_dark.png" if is_dark else "profil_light.png"
+
+# CSS: İkonları gizle ve modern tasarım
 st.markdown("""
     <style>
-    .stChatInput {background-color: #1e1e1e;}
-    .stChatMessage {border-radius: 15px; padding: 10px;}
+    [data-testid="chatAvatarIcon-user"] { display: none; }
+    [data-testid="chatAvatarIcon-assistant"] { display: none; }
+    .stChatMessage { padding: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
-# API Anahtarları
+# Başlık Kısmı
+col1, col2 = st.columns([1, 5])
+with col1:
+    st.image("logo.png", width=70)
+with col2:
+    st.markdown("<h1 style='margin-top: 10px;'>Eymen AI</h1>", unsafe_allow_html=True)
+
+# API Anahtarları (Sıralı)
 keys = [st.secrets["KEY_1"], st.secrets["KEY_2"], st.secrets["KEY_3"]]
 
 def get_model():
-    # 2.5 veya 2.0 modelini burada belirtiyoruz
-    model_name = 'gemini-2.5-flash' 
-    genai.configure(api_key=keys[0]) # İlk anahtarla başla
-    return genai.GenerativeModel(
-        model_name=model_name,
-        system_instruction="""Sen Eymen AI'sin. 
-        - Kendini her zaman Eymen AI olarak tanıt.
-        - Kullanıcının dilinde anında cevap ver.
-        - Çok hızlı, enerjik ve modern bir tarzın olsun.
-        - Cevapların net ve özlü olsun."""
-    )
-
-st.title("⚡ Eymen AI")
+    for key in keys:
+        try:
+            genai.configure(api_key=key)
+            return genai.GenerativeModel(
+                model_name='gemini-2.0-flash', # Google API'de güncel model ismi
+                system_instruction="Sen Eymen AI'sin. Hızlı, modern ve enerjik bir yapay zekasın."
+            )
+        except:
+            continue
+    return None
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mesaj geçmişini göster
+# Mesajları Görüntüle
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    avatar = avatar_path if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=avatar):
+        if msg.get("type") == "image":
+            st.image(msg["content"])
+        else:
+            st.markdown(msg["content"])
 
-# Giriş kutusu
-if prompt := st.chat_input("Eymen AI'ye bir şey sor..."):
+# Giriş Kutusu
+if prompt := st.chat_input("Eymen AI'ye sor veya çizdir..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar=None):
         st.markdown(prompt)
 
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
-        
-        try:
-            model = get_model()
-            # Yazma efekti (üç nokta ile)
-            message_placeholder.markdown("Eymen AI yazıyor... ▌")
-            
-            response = model.generate_content(prompt, stream=True)
-            
-            for chunk in response:
-                full_response += chunk.text
-                message_placeholder.markdown(full_response + "▌")
-            
-            message_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            
-        except Exception as e:
-            st.error("Bir bağlantı hatası oluştu, lütfen tekrar dene.")
-            # Hata durumunda loga düşmesi için
-            st.write(f"Hata detayları: {str(e)}")
+    # Görsel Oluşturma (Çizdirme)
+    if "çiz" in prompt.lower() or "oluştur" in prompt.lower():
+        with st.chat_message("assistant", avatar=avatar_path):
+            img_prompt = prompt.replace("çiz", "").replace("oluştur", "").strip()
+            img_url = f"https://pollinations.ai/p/{img_prompt}?width=512&height=512&nologo=true"
+            st.image(img_url)
+            st.session_state.messages.append({"role": "assistant", "content": img_url, "type": "image"})
+    
+    # Sohbet
+    else:
+        with st.chat_message("assistant", avatar=avatar_path):
+            message_placeholder = st.empty()
+            full_response = ""
+            try:
+                model = get_model()
+                response = model.generate_content(prompt, stream=True)
+                for chunk in response:
+                    full_response += chunk.text
+                    message_placeholder.markdown(full_response + "▌")
+                message_placeholder.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+            except Exception:
+                st.error("Bir bağlantı hatası oluştu.")

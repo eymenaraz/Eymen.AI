@@ -82,3 +82,6 @@ if prompt := st.chat_input("Eymen AI'ye sor veya çizdir..."):
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
             except Exception:
                 st.error("Bir bağlantı hatası oluştu.")
+streamlit
+google-generativeai
+streamlit-theme

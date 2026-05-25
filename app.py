@@ -109,11 +109,10 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # GÜNCELLENMİŞ ARAÇ KUTUSU (KAREKÖK EKLENDİ)
     st.subheader("🛠️ Akıllı Araç Kutusu")
     components.html("""
         <style>
-            body { font-family: sans-serif; margin: 0; padding: 0; }
+            body { font-family: sans-serif; }
             .tool-box { background: #f1f3f6; border-radius: 12px; padding: 15px; }
             .calc-screen { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; text-align: right; }
             .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
@@ -125,56 +124,4 @@ with st.sidebar:
                 <button class="btn" onclick="append('7')">7</button><button class="btn" onclick="append('8')">8</button><button class="btn" onclick="append('9')">9</button><button class="btn" onclick="append('/')">/</button>
                 <button class="btn" onclick="append('4')">4</button><button class="btn" onclick="append('5')">5</button><button class="btn" onclick="append('6')">6</button><button class="btn" onclick="append('*')">x</button>
                 <button class="btn" onclick="append('1')">1</button><button class="btn" onclick="append('2')">2</button><button class="btn" onclick="append('3')">3</button><button class="btn" onclick="append('-')">-</button>
-                <button class="btn" onclick="append('0')">0</button><button class="btn" onclick="document.getElementById('screen').value=Math.sqrt(eval(document.getElementById('screen').value))">√</button>
-                <button class="btn" onclick="document.getElementById('screen').value=eval(document.getElementById('screen').value)" style="grid-column: span 2; background:#34c759; color:white;">=</button>
-            </div>
-        </div>
-        <script>
-            function append(v){ let s=document.getElementById('screen'); s.value=(s.value=='0')?v:s.value+v; }
-        </script>
-    """, height=300)
-
-# --- ROBUST MEKANİK (Tıklayınca Kapatma) ---
-components.html("""
-    <script>
-        window.parent.document.addEventListener('click', function(e) {
-            const side = window.parent.document.querySelector('[data-testid="stSidebar"]');
-            const btn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
-            if (side && !side.contains(e.target) && btn && !btn.contains(e.target)) {
-                if (side.getAttribute('aria-expanded') === 'true') btn.click();
-            }
-        });
-    </script>
-""", height=0)
-
-# --- DOSYA YÜKLEME ---
-uploaded_file = st.file_uploader("Fotoğrafı,Problem veya PDF Yükle", type=["jpg", "png", "jpeg", "pdf"])
-
-# --- MESAJLARI GÖSTER ---
-messages = st.session_state.sessions[st.session_state.current_session]
-for msg in messages:
-    avatar = USER_AVATAR if msg["role"] == "user" else BOT_AVATAR
-    with st.chat_message(msg["role"], avatar=avatar):
-        if msg.get("type") == "image": st.image(msg["content"], use_container_width=True)
-        else: st.markdown(msg["content"])
-
-# --- İŞLEM VE DÜŞÜNME ---
-if prompt := st.chat_input("Eymen AI'ye birşeyler sor..."):
-    messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar=USER_AVATAR): st.markdown(prompt)
-
-    with st.chat_message("assistant", avatar=BOT_AVATAR):
-        with st.spinner("Eymen AI düşünüyor 💭..."):
-            # Görsel tetikleyicisi
-            if any(w in prompt.lower() for w in ["resim", "görsel"]):
-                img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt)}?width=1024&height=1024&seed={random.randint(1,99999)}"
-                st.image(img_url, use_container_width=True)
-                messages.append({"role": "assistant", "content": img_url, "type": "image"})
-            else:
-                contents = [prompt]
-                if uploaded_file:
-                    if uploaded_file.name.lower().endswith(".pdf"): contents.append({"mime_type": "application/pdf", "data": uploaded_file.getvalue()})
-                    else: contents.append(Image.open(uploaded_file))
-                answer = generate_with_retry(contents)
-                st.markdown(answer)
-                messages.append({"role": "assistant", "content": answer})
+                <button class="btn" onclick="append('0')">0</button><button class="btn" onclick="document.getElementById('screen').value=Math.sqrt

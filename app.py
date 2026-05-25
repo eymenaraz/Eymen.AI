@@ -37,23 +37,32 @@ with st.sidebar:
     for name in list(st.session_state.sessions.keys()):
         if st.button(name, key=f"btn_{name}"): st.session_state.current_session = name; st.rerun()
     
-    # Gelişmiş Hesap Makinesi ve Şifre Üretici
-    components.html("""<div style="background:#f8f9fa; padding:10px; border-radius:12px; border:1px solid #ddd; font-family:sans-serif;">
-    <p style="font-weight:bold; margin-bottom:5px;">🧮 Hesap Makinesi</p>
-    <input type="text" id="scr" style="width:100%; padding:8px; margin-bottom:5px; border:1px solid #ccc; border-radius:4px;" value="0">
-    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px;">
-    <button onclick="document.getElementById('scr').value+='+'" style="padding:8px;">+</button>
-    <button onclick="document.getElementById('scr').value+='-'" style="padding:8px;">-</button>
-    <button onclick="document.getElementById('scr').value+='*'" style="padding:8px;">×</button>
-    <button onclick="document.getElementById('scr').value+='/'" style="padding:8px;">÷</button>
-    <button onclick="document.getElementById('scr').value=Math.sqrt(eval(document.getElementById('scr').value))" style="padding:8px; grid-column:span 2;">√</button>
-    <button onclick="document.getElementById('scr').value=''" style="padding:8px;">C</button>
-    <button onclick="document.getElementById('scr').value=eval(document.getElementById('scr').value)" style="padding:8px; background:#28a745; color:white;">=</button>
-    </div>
-    <p style="font-weight:bold; margin:10px 0 5px 0;">🔐 Şifre Üretici</p>
-    <input type="text" id="pass" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:5px;" readonly>
-    <button onclick="let p=''; for(let i=0;i<12;i++) p+='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*62)]; document.getElementById('pass').value=p;" style="width:100%; background:#007bff; color:white; border:none; padding:8px; border-radius:4px;">Üret</button>
-    </div>""", height=280)
+    # Hesap Makinesi (İlk Tasarım + Karekök)
+    components.html("""
+        <div style="background:#f1f3f6; padding:10px; border-radius:10px; font-family:sans-serif;">
+            <p style="font-weight:bold; margin:0 0 5px 0;">🧮 Hesap Makinesi</p>
+            <input type="text" id="scr" style="width:100%; border:1px solid #ccc; border-radius:5px; padding:5px; margin-bottom:5px;" value="0">
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px;">
+                <button onclick="document.getElementById('scr').value += '7'">7</button>
+                <button onclick="document.getElementById('scr').value += '8'">8</button>
+                <button onclick="document.getElementById('scr').value += '9'">9</button>
+                <button onclick="document.getElementById('scr').value += '4'">4</button>
+                <button onclick="document.getElementById('scr').value += '5'">5</button>
+                <button onclick="document.getElementById('scr').value += '6'">6</button>
+                <button onclick="document.getElementById('scr').value += '1'">1</button>
+                <button onclick="document.getElementById('scr').value += '2'">2</button>
+                <button onclick="document.getElementById('scr').value += '3'">3</button>
+                <button onclick="document.getElementById('scr').value += '0'">0</button>
+                <button onclick="document.getElementById('scr').value += '+'">+</button>
+                <button onclick="document.getElementById('scr').value += '-'">-</button>
+                <button onclick="document.getElementById('scr').value += '*'">×</button>
+                <button onclick="document.getElementById('scr').value += '/'">÷</button>
+                <button onclick="document.getElementById('scr').value = Math.sqrt(eval(document.getElementById('scr').value))">√</button>
+                <button onclick="document.getElementById('scr').value = eval(document.getElementById('scr').value)" style="background:#4CAF50; color:white;">=</button>
+                <button onclick="document.getElementById('scr').value = ''" style="grid-column: span 2;">C</button>
+            </div>
+        </div>
+    """, height=280)
 
 components.html("""<script>
 const parentDoc = window.parent.document;
@@ -71,7 +80,7 @@ for msg in st.session_state.sessions[st.session_state.current_session]:
         if msg.get("type") == "image": st.image(msg["content"])
         else: st.markdown(msg["content"])
 
-if prompt := st.chat_input("Eymen AI'ye sor..."):
+if prompt := st.chat_input("Eymen AI'ye birşeyler sor..."):
     st.session_state.sessions[st.session_state.current_session].append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant"):

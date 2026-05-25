@@ -3,6 +3,7 @@ import google.generativeai as genai
 import random
 import time
 from PIL import Image
+import urllib.parse # Hangi cihaz olursa olsun URL hatalarını önlemek için eklendi
 
 # Sürpriz Özellik İçin Gereken Kütüphane
 import io
@@ -105,7 +106,7 @@ with st.sidebar:
         )
 
 # --- DOSYA YÜKLEME ---
-uploaded_file = st.file_uploader("Fotoğrafı,Problem veya PDF Yükle", type=["jpg", "png", "jpeg", "pdf"])
+uploaded_file = st.file_uploader("Fotoğraf,Problem veya PDF Yükle", type=["jpg", "png", "jpeg", "pdf"])
 
 # --- MESAJLARI GÖSTER ---
 messages = st.session_state.sessions[st.session_state.current_session]
@@ -125,9 +126,12 @@ if prompt := st.chat_input("Eymen AI'ye birşeyler sor..."):
     with st.chat_message("assistant", avatar=BOT_AVATAR):
         with st.spinner("Eymen AI düşünüyor 💭..."):
             
-            # Resim Çizdirme Kontrolü
+            # Resim Çizdirme Kontrolü (Hatasız ve Cihaz Bağımsız Sürüm)
             if any(word in prompt.lower() for word in ["çiz", "oluştur", "resmini yap", "hayal et"]):
-                img_url = f"https://pollinations.ai/p/{prompt}?width=512&height=512&nologo=true"
+                # Prompt içindeki boşlukları ve özel karakterleri URL formatına çevirir
+                safe_prompt = urllib.parse.quote(prompt)
+                img_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true"
+                
                 st.image(img_url, use_container_width=True)
                 messages.append({"role": "assistant", "content": img_url, "type": "image"})
             

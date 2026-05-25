@@ -170,9 +170,12 @@ if prompt := st.chat_input("Eymen AI'ye birşeyler sor..."):
 
     with st.chat_message("assistant", avatar=BOT_AVATAR):
         with st.spinner("Eymen AI düşünüyor 💭..."):
-            if any(w in prompt.lower() for w in ["resim", "görsel"]):
+            if any(w in prompt.lower() for w in ["resim", "görsel", "çiz", "oluştur"]):
                 img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt)}?width=1024&height=1024&seed={random.randint(1,99999)}"
                 st.image(img_url, use_container_width=True)
+                ans_text = "İstediğin görseli senin için hazırladım."
+                st.markdown(ans_text)
+                messages.append({"role": "assistant", "content": ans_text})
                 messages.append({"role": "assistant", "content": img_url, "type": "image"})
             else:
                 contents = [prompt]

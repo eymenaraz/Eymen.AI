@@ -49,4 +49,151 @@ def generate_with_retry(contents):
     valid_keys = [st.secrets.get(f"KEY_{i}", "") for i in range(1, 11) if st.secrets.get(f"KEY_{i}", "").startswith("AIza")]
             
     if not valid_keys:
-        return "SİSTEM HATASI: Kotanızı doldurdunuz.Bu sorunu düzeltmek için biraz zamana ihtiyacımız var.Yeni geliştirm
+        # Editör hatalarını önlemek için güvenli parantez yapısına alındı
+        return ("SİSTEM HATASI: Kotanızı doldurdunuz."
+                "Bu sorunu düzeltmek için biraz zamana ihtiyacımız var."
+                "Yeni geliştirmeleri bekleyin...")
+    
+    random.shuffle(valid_keys)
+    
+    last_error = ""
+    for api_key in valid_keys:
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=SYS_INST)
+            response = model.generate_content(contents)
+            return response.text
+        except Exception as e:
+            last_error = str(e)
+            time.sleep(0.5) 
+            continue
+            
+    return f"Google API Kota Sınırı: Tüm anahtarlar tükendi veya bağlantı koptu. Hata: {last_error}"
+
+# --- SOHBET YÖNETİMİ ---
+if "sessions" not in st.session_state: st.session_state.sessions = {"Sohbet 1": []}
+if "current_session" not in st.session_state: st.session_state.current_session = "Sohbet 1"
+
+with st.sidebar:
+    st.header("Sohbet Geçmişi")
+    if st.button("➕ Yeni Sohbet", use_container_width=True):
+        name = f"Sohbet {len(st.session_state.sessions) + 1}"
+        st.session_state.sessions[name] = []
+        st.session_state.current_session = name
+        st.rerun()
+        
+    # Sohbet Listesi ve Silme Butonları
+    for name in list(st.session_state.sessions.keys()):
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            if st.button(name, key=f"btn_{name}", use_container_width=True): 
+                st.session_state.current_session = name
+                st.rerun()
+        with col2:
+            if st.button("🗑️", key=f"del_{name}"):
+                del st.session_state.sessions[name]
+                if st.session_state.current_session == name:
+                    st.session_state.current_session = list(st.session_state.sessions.keys())[0] if st.session_state.sessions else "Sohbet 1"
+                    if not st.session_state.sessions: st.session_state.sessions = {"Sohbet 1": []}
+                st.rerun()
+            
+    st.markdown("---")
+    
+    # EKSİKSİZ İNDİRME ÖZELLİĞİ
+    st.subheader("📥 İndir & Kaydet")
+    current_msgs = st.session_state.sessions[st.session_state.current_session]
+    if len(current_msgs) > 0:
+        chat_text = f"--- {st.session_state.current_session} | Eymen AI Çalışma Notları ---\n\n"
+        for m in current_msgs:
+            if m.get("type") != "image":
+                role_name = "SEN" if m["role"] == "user" else "EYMEN AI"
+                chat_text += f"{role_name}:\n{m['content']}\n\n{'-'*40}\n\n"
+        
+        chat_bytes = chat_text.encode('utf-8')
+        
+        st.download_button(
+            label="Bu Sohbeti Tam Not Olarak İndir",
+            data=chat_bytes,
+            file_name=f"{st.session_state.current_session}_Notlar.txt",
+            mime="text/plain",
+            use_container_width=True
+        )
+
+    st.markdown("---")
+    
+    # EVRENSEL AKILLI ARAÇ KUTUSU
+    st.subheader("🛠️ Akıllı Araç Kutusu")
+    components.html("""
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+            .tool-box { background: #f1f3f6; border-radius: 12px; padding: 15px; text-align: center; box-shadow: inset 0px 2px 5px rgba(0,0,0,0.05); }
+            .tool-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 10px; text-align: left; }
+            /* Calculator CSS */
+            .calc-screen { width: 100%; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 18px; text-align: right; box-sizing: border-box; margin-bottom: 10px; color: #333;}
+            .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+            .btn { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px 0; font-size: 16px; cursor: pointer; color: #333; transition: 0.1s; }
+            .btn:active { background: #e0e0e0; }
+            .btn-op { background: #ff9f0a; color: #fff; border: none; }
+            .btn-op:active { background: #e68e00; }
+            .btn-eq { background: #34c759; color: #fff; border: none; grid-column: span 2; }
+            /* Divider */
+            .divider { height: 1px; background: #ddd; margin: 15px 0; }
+            /* Password Gen CSS */
+            .pass-screen { width: 100%; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px; text-align: center; box-sizing: border-box; margin-bottom: 10px; color: #333; font-family: monospace; }
+            .btn-pass { background: #007aff; color: #fff; border: none; border-radius: 8px; padding: 10px; width: 100%; cursor: pointer; font-size: 14px; font-weight: bold; }
+            .btn-pass:active { background: #0062cc; }
+        </style>
+        
+        <div class="tool-box">
+            <div class="tool-title">🧮 Hızlı Hesap Makinesi</div>
+            <input type="text" id="screen" class="calc-screen" disabled value="0">
+            <div class="calc-grid">
+                <button class="btn" onclick="clearScreen()">C</button>
+                <button class="btn" onclick="append('(')">(</button>
+                <button class="btn" onclick="append(')')">)</button>
+                <button class="btn btn-op" onclick="append('/')">÷</button>
+                
+                <button class="btn" onclick="append('7')">7</button>
+                <button class="btn" onclick="append('8')">8</button>
+                <button class="btn" onclick="append('9')">9</button>
+                <button class="btn btn-op" onclick="append('*')">×</button>
+                
+                <button class="btn" onclick="append('4')">4</button>
+                <button class="btn" onclick="append('5')">5</button>
+                <button class="btn" onclick="append('6')">6</button>
+                <button class="btn btn-op" onclick="append('-')">−</button>
+                
+                <button class="btn" onclick="append('1')">1</button>
+                <button class="btn" onclick="append('2')">2</button>
+                <button class="btn" onclick="append('3')">3</button>
+                <button class="btn btn-op" onclick="append('+')">+</button>
+                
+                <button class="btn" onclick="append('0')">0</button>
+                <button class="btn" onclick="append('.')">.</button>
+                <button class="btn btn-eq" onclick="calculate()">=</button>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="tool-title">🔐 Güvenli Şifre Üretici</div>
+            <input type="text" id="pass-screen" class="pass-screen" readonly value="Şifre için tıkla...">
+            <button class="btn-pass" onclick="generatePassword()">Güçlü Şifre Oluştur</button>
+        </div>
+
+        <script>
+            let screen = document.getElementById('screen');
+            function append(val) {
+                if (screen.value === "0" || screen.value === "Hata") screen.value = val;
+                else screen.value += val;
+            }
+            function clearScreen() { screen.value = "0"; }
+            function calculate() {
+                try { screen.value = eval(screen.value); }
+                catch (e) { screen.value = "Hata"; }
+            }
+            function generatePassword() {
+                const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+                let pass = "";
+                for (let i = 0; i < 12; i++) {
+                    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+                }

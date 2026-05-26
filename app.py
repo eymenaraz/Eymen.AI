@@ -1,7 +1,7 @@
 # ==============================================================================
-# PROJE ADI: EYMEN AI (PREMIUM ENTERPRISE EDITION V5)
+# PROJE ADI: EYMEN AI (PREMIUM ENTERPRISE EDITION V6)
 # ÖZELLİKLER: Zıplayan Nokta Animasyonları, Gemini Enhanced 1080p Medya Motoru,
-#            Gerçek MP4 Video Altyapısı, Gelişmiş iOS Uyumluluğu
+#            Gelişmiş iOS Uyumluluğu, Bağlamsal Akıllı Görsel Hafızası
 # ==============================================================================
 
 import streamlit as st
@@ -36,7 +36,7 @@ st.markdown("""
     <style>
     .stChatInput { padding-bottom: max(15px, env(safe-area-inset-bottom)) !important; position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; z-index: 999999 !important; }
     .stApp { transform: translate3d(0,0,0); -webkit-transform: translate3d(0,0,0); -webkit-overflow-scrolling: touch !important; height: 100vh !important; overflow-y: auto !important; }
-    .header-box { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding: 10px; border-radius: 12px; background: transparent; }
+    .header-box { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; padding: 10px; border-radius: 12px; background: transparent; }
     .block-container { padding-top: 2.5rem !important; padding-bottom: 6rem !important; }
     
     /* Sesli Okuma Butonu */
@@ -61,10 +61,13 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+# --- DOSYA YÜKLEYİCİ ARTIK TAM AYNI UZUNLUKTA VE EYMEN AI YAZISININ ALTINDA ---
+uploaded_file = st.file_uploader("Fotoğrafı, Problem veya PDF Yükle", type=["jpg", "png", "jpeg", "pdf"])
+
 SYS_INST = """Senin adın Eymen AI. Eymen tarafından geliştirildin.
 Kullanıcıya asla 'Başka ne sormak istersin?' gibi robotik cümleler kurma. Doğal ve direkt ol.
 2021 LGS kağıt katlama sorusu gibi zorlu problemleri kusursuz çözersin. MEB ve yayıncı sorularını hata yapmadan, kesin şık vererek adım adım açıklarsın.
-Nano Banana 2 ve Premium Video özelliklerin var. Eğer kullanıcı senden görsel veya video isterse bunu yeteneklerinle gerçekleştirirsin."""
+Nano Banana 2 özelliklerin var. Eğer kullanıcı senden görsel isterse bunu yeteneklerinle gerçekleştirirsin."""
 
 # ==============================================================================
 # 2. KISIM: YÜK DENGELİ API YÖNETİCİSİ VE ANİMASYON FONKSİYONLARI
@@ -97,15 +100,27 @@ def generate_with_retry(contents):
     return f"Hata: {last_error}"
 
 # ==============================================================================
-# 3. KISIM: 1080P ZENGİNLEŞTİRİLMİŞ MEDYA MOTORU (GEMINI DESTEKLİ)
+# 3. KISIM: 1080P SÜREKLİ GÖRSEL HAFIZA MOTORU (BAĞLAM DUYARLI)
 # ==============================================================================
-def generate_1080p_image_url(user_prompt):
-    # Gemini'yi kullanarak kullanıcının kısa cümlesini ultra detaylı İngilizce bir prompta çeviriyoruz.
-    enhancement_prompt = f"Kullanıcının şu isteğini al ve bunu yapay zekanın çizebilmesi için ultra detaylı, 1080p, fotogerçekçi ve sinematik ışıklandırmalı İngilizce bir Stable Diffusion promptuna çevir. Sadece İngilizce promptu yaz, başka hiçbir açıklama ekleme. İstek: {user_prompt}"
+def generate_1080p_image_url(user_prompt, history_pipeline):
+    # Geçmiş konuşmalardan metin bazlı olanları toplayıp zeka motoruna hafıza olarak veriyoruz
+    context_memory = ""
+    for m in history_pipeline[-6:]:
+        if m.get("type") != "image":
+            role_label = "Kullanıcı" if m["role"] == "user" else "Eymen AI"
+            context_memory += f"{role_label}: {m['content']}\n"
+            
+    enhancement_prompt = f"""Aşağıda kullanıcının seninle olan son konuşma geçmişi ve en son isteği yer almaktadır.
+Konuşma geçmişini derinlemesine analiz ederek (özellikle 'bunu mavi yap', 'arkasına şunu ekle', 'bir tane daha' gibi ardışık ifadeler varsa neyi kastettiğini kusursuzca anlamak için), kullanıcının en son isteğini yapay zekanın çizebilmesi için ultra detaylı, 1080p, fotogerçekçi ve sinematik İngilizce bir Stable Diffusion promptuna çevir. 
+Sadece İngilizce promptu yaz, başka hiçbir açıklama veya yorum ekleme.
+
+Konuşma Geçmişi:
+{context_memory}
+
+Kullanıcının En Son İsteği: {user_prompt}"""
     
     enhanced_english_prompt = generate_with_retry([enhancement_prompt])
     
-    # Nanosaniye bazlı tohum ve 1080p çözünürlük ayarları (1920x1080)
     safe_prompt = urllib.parse.quote(enhanced_english_prompt.strip())
     unique_seed = time.time_ns() % 1000000
     
@@ -121,7 +136,7 @@ def get_tts_html(response_text):
     """
 
 # ==============================================================================
-# 4. KISIM: SİDEBAR - SOHBET GEÇMİŞİ VE AKILLI ARAÇ KUTUSU (BOZULMADAN)
+# 4. KISIM: SİDEBAR - SOHBET GEÇMİŞİ VE AKILLI ARAÇ KUTUSU
 # ==============================================================================
 with st.sidebar:
     st.header("Sohbet Geçmişi")
@@ -152,7 +167,7 @@ with st.sidebar:
     if len(current_msgs) > 0:
         chat_text = f"--- {st.session_state.current_session} | Eymen AI Çalışma Notları ---\n\n"
         for m in current_msgs:
-            if m.get("type") not in ["image", "video"]:
+            if m.get("type") != "image":
                 role_name = "SEN" if m["role"] == "user" else "EYMEN AI"
                 chat_text += f"{role_name}:\n{m['content']}\n\n{'-'*40}\n\n"
         st.download_button(label="Not Olarak İndir", data=chat_text.encode('utf-8'), file_name=f"{st.session_state.current_session}_Notlar.txt", mime="text/plain", use_container_width=True)
@@ -205,7 +220,6 @@ components.html("<script>window.parent.document.addEventListener('click', functi
 # ==============================================================================
 # 5. KISIM: EKRAN RENDER VE SOHBET ALTYAPISI
 # ==============================================================================
-uploaded_file = st.file_uploader("Fotoğrafı, Problem veya PDF Yükle", type=["jpg", "png", "jpeg", "pdf"])
 messages_pipeline = st.session_state.sessions[st.session_state.current_session]
 
 for msg in messages_pipeline:
@@ -229,34 +243,32 @@ if prompt := st.chat_input("Eymen AI'ye birşeyler sor..."):
     with st.chat_message("assistant", avatar=BOT_AVATAR):
         normalized_query = prompt.lower().strip()
         
-        # --- DURUM A: VİDEO İSTEĞİ (Animasyon + Gerçekçi Uyarı) ---
-        if any(indicator in normalized_query for indicator in ["video", "hareketli"]):
+        # --- GELİŞMİŞ GÖRSEL MODU TESPİT ALTYAPISI (HAFIZA BAĞLANTILI) ---
+        is_image_request = any(indicator in normalized_query for indicator in ["resim", "görsel", "çiz", "oluştur", "foto", "fotoğraf"])
+        
+        # Eğer tetikleyici kelime yoksa ama bir önceki asistan mesajı bir resimse/resimle ilgiliyse devamı niteliğindedir
+        if not is_image_request and len(messages_pipeline) > 1:
+            last_assistant_msg = None
+            for m in reversed(messages_pipeline[:-1]): # Mevcut kullanıcı mesajı hariç son asistan yanıtını bul
+                if m["role"] == "assistant":
+                    last_assistant_msg = m
+                    break
+            if last_assistant_msg and (last_assistant_msg.get("type") == "image" or "ürettim" in last_assistant_msg["content"] or "oluşturdum" in last_assistant_msg["content"]):
+                # Kullanıcı görsel modundayken kısa modifikasyon veya ardışık emirler veriyorsa resim motorunu açık tut
+                if len(normalized_query) < 60 or any(w in normalized_query for w in ["renk", "mavi", "yeşil", "kırmızı", "siyah", "beyaz", "sarı", "arkası", "arka plan", "olsun", "başka", "tane", "daha", "değiştir", "bunu", "şunu"]):
+                    is_image_request = True
+
+        # --- FOTOĞRAF OLUŞTURMA İSTEĞİ (Her İstemde Kusursuz Çalışır) ---
+        if is_image_request:
             loading_placeholder = st.empty()
-            # Zıplayan noktalar ile video oluşturuluyor simülasyonu başlar
-            loading_placeholder.markdown(get_loading_html("Video oluşturuluyor"), unsafe_allow_html=True)
-            time.sleep(2.5) # Animasyonu kullanıcının görmesi için bekleme
-            
-            loading_placeholder.empty() # Animasyonu kaldır
-            
-            # Gerçekçi ve profesyonel Eymen AI yanıtı
-            video_error_msg = "🚨 **Gerçek 60 FPS Video Üretimi İçin Sistem Yükseltmesi Gerekiyor**\n\nSisteme sağladığın istemi analiz ettim. Ancak gerçek sora kalitesinde akıcı bir AI video (.mp4) oluşturabilmemiz için sisteme Luma, Runway veya Replicate gibi ücretli bir Video Motoru API anahtarı bağlaman gerekiyor. Şu anki Google altyapısında sana sahte bir CSS illüzyonu sunmak yerine dürüst olmayı seçiyorum. Fotoğraf üretimlerim ise 1080p olarak tamamen açıktır."
-            
-            st.markdown(video_error_msg)
-            st.markdown(get_tts_html(video_error_msg), unsafe_allow_html=True)
-            messages_pipeline.append({"role": "assistant", "content": video_error_msg})
-            
-        # --- DURUM B: KUSURSUZ 1080P FOTOĞRAF OLUŞTURMA İSTEĞİ ---
-        elif any(indicator in normalized_query for indicator in ["resim", "görsel", "çiz", "oluştur", "foto", "fotoğraf"]):
-            loading_placeholder = st.empty()
-            # Zıplayan noktalar ile fotoğraf oluşturuluyor animasyonu başlar
             loading_placeholder.markdown(get_loading_html("Fotoğraf oluşturuluyor"), unsafe_allow_html=True)
             
-            # Gemini kullanarak arka planda promptu zenginleştir (Arama ve birleştirme yeteneği)
-            computed_image_url = generate_1080p_image_url(prompt)
+            # Gemini konuşma geçmişini ve yeni emri birleştirip URL üretir
+            computed_image_url = generate_1080p_image_url(prompt, messages_pipeline)
             
-            loading_placeholder.empty() # Animasyonu kaldır
+            loading_placeholder.empty() 
             
-            notification_text = "İstediğin konuyu internetteki verilerle analiz ettim, promptunu zenginleştirdim ve senin için 1080p (1920x1080) çözünürlükte, detaylı bir yapay zeka görseli ürettim."
+            notification_text = "İstediğin konuyu ve konuşma geçmişindeki değişiklikleri analiz ettim, senin için 1080p (1920x1080) çözünürlükte yeni yapay zeka görselini başarıyla ürettim."
             
             st.image(computed_image_url, use_container_width=True)
             st.markdown(notification_text)
@@ -265,7 +277,7 @@ if prompt := st.chat_input("Eymen AI'ye birşeyler sor..."):
             messages_pipeline.append({"role": "assistant", "content": notification_text})
             messages_pipeline.append({"role": "assistant", "content": computed_image_url, "type": "image"})
             
-        # --- DURUM C: NORMAL SOHBET VE PROBLEM ÇÖZÜMÜ ---
+        # --- NORMAL SOHBET VE PROBLEM ÇÖZÜMÜ ---
         else:
             with st.spinner("Eymen AI düşünüyor 💭..."):
                 input_payload = [prompt]

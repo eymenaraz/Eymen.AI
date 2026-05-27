@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eymen AI V2 - Premium",
+    page_title="Eymen AI V2",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"

@@ -16,6 +16,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- SOHBET HAFIZASI VE ÇOKLU OTURUM YÖNETİMİ (YENİ SİSTEM) ---
+if "chats" not in st.session_state:
+    st.session_state.chats = {"Sohbet 1": []}
+    st.session_state.current_chat = "Sohbet 1"
+
+# Kodun geri kalanının bozulmaması için messages listesini aktif sohbete bağlıyoruz
+st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
+
 # --- CSS VE STYLING (PREMIUM, LIGHT/DARK MODE & IPHONE MOBİL DÜZELTMESİ) ---
 st.markdown("""
 <style>
@@ -132,10 +140,29 @@ with st.sidebar:
     st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.6rem;'>Menü Navigasyon</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    # 1. SOHBETLER SEKMESİ
+    # 1. SOHBET YÖNETİMİ (YENİLENMİŞ ÇOKLU SOHBET)
     st.markdown("<h3 style='color: #64748b;'>💬 Sohbet Yönetimi</h3>", unsafe_allow_html=True)
-    if st.button("🗑️ Mevcut Sohbeti Sıfırla", use_container_width=True):
-        st.session_state.messages = []
+    
+    chat_list = list(st.session_state.chats.keys())
+    selected_chat = st.selectbox("Aktif Sohbet:", chat_list, index=chat_list.index(st.session_state.current_chat))
+    
+    if selected_chat != st.session_state.current_chat:
+        st.session_state.current_chat = selected_chat
+        st.rerun()
+
+    col_btn1, col_btn2 = st.columns(2)
+    if col_btn1.button("➕ Yeni Sohbet", use_container_width=True):
+        new_name = f"Sohbet {len(st.session_state.chats) + 1}"
+        st.session_state.chats[new_name] = []
+        st.session_state.current_chat = new_name
+        st.rerun()
+        
+    if col_btn2.button("🗑️ Sohbeti Sil", use_container_width=True):
+        if len(st.session_state.chats) > 1:
+            del st.session_state.chats[st.session_state.current_chat]
+            st.session_state.current_chat = list(st.session_state.chats.keys())[0]
+        else:
+            st.session_state.chats[st.session_state.current_chat] = []
         st.rerun()
         
     st.write("---")
@@ -143,7 +170,16 @@ with st.sidebar:
     # 2. AKILLI ARAÇ KUTUSU SEKMESİ
     st.markdown("<h3 style='color: #64748b;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
     
-    # YENİ SÜRPRİZ ÖZELLİK: METİN ANALİZ ARACI
+    # YENİ ÖZELLİK: ŞİFRE OLUŞTURUCU
+    with st.expander("🔑 Hızlı Şifre Oluşturucu"):
+        st.caption("İstediğiniz hanede kırılmaz bir şifre yaratın.")
+        pwd_length = st.number_input("Hane Sayısı:", min_value=4, max_value=128, value=12, step=1)
+        if st.button("Şifre Üret", use_container_width=True):
+            chars = string.ascii_letters + string.digits + "!@#$%^&*()_+"
+            new_password = "".join(random.choice(chars) for _ in range(pwd_length))
+            st.code(new_password, language="")
+
+    # METİN ANALİZ ARACI
     with st.expander("📊 Sürpriz: Metin & Kelime Analizcisi"):
         st.caption("Uzun metinlerinizi yapıştırıp kaç karakter/kelime olduğunu hemen öğrenin.")
         analiz_metni = st.text_area("Analiz edilecek metin:")
@@ -157,7 +193,6 @@ with st.sidebar:
         if "calc_val" not in st.session_state:
             st.session_state.calc_val = ""
             
-        # Klavyeden giriş yapılabilmesi için revize edildi
         st.session_state.calc_val = st.text_input("Ekran (Klavyeden yazabilirsiniz)", value=st.session_state.calc_val)
         
         col1, col2, col3, col4 = st.columns(4)
@@ -214,10 +249,7 @@ def render_message(msg):
         else:
             st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# --- SOHBET HAFIZASI VE OTURUM YÖNETİMİ ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
+# Ekrana aktif sohbetin mesajlarını bas
 for msg in st.session_state.messages:
     render_message(msg)
 
@@ -225,20 +257,20 @@ for msg in st.session_state.messages:
 if user_query := st.chat_input("Eymen AI V2'ye bir şeyler sorun..."):
     
     st.session_state.messages.append({"role": "user", "content": user_query})
-    st.rerun() # Kullanıcı mesajını anında ekrana basmak için sayfayı yenile
+    st.rerun() 
 
 # Eğer son mesaj kullanıcıdan geldiyse, cevap üret
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]
     
-    # ULTRA FOTOĞRAF MOTORU (GELİŞTİRİLMİŞ SİNEMATİK PROMPT)
+    # ULTRA FOTOĞRAF MOTORU (ÜNLÜ, SIFIR HATA, KUSURSUZ PHOTOSHOP MEKANİĞİ EKLENDİ)
     image_triggers = ["görsel oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
     if any(trigger in user_query.lower() for trigger in image_triggers):
-        with st.spinner("V2 Medya Motoru görseli hazırlıyor..."):
+        with st.spinner("V2 Medya Motoru ultra gerçekçi görseli hazırlıyor..."):
             random_seed = random.randint(1, 9999999)
-            # İnternet verilerinden beslenmiş hissi veren, tamamen sansürsüz ve detaylı komut
-            enhanced_prompt = f"{user_query}, highly accurate internet search details, real world reference, ultra realistic, highly detailed, photorealistic, 8k resolution, cinematic lighting, masterpiece, uncensored, unfiltered, no restrictions"
+            # Ünlüler ve yüzler için 0 hata photoshop simülasyonu yapan geliştirilmiş komut
+            enhanced_prompt = f"{user_query}, exactly identical to real person if famous, internet search integrated facial mapping, flawless photoshop mechanic, 0 errors, highly accurate real world reference, ultra realistic, highly detailed, photorealistic, 8k resolution, cinematic lighting, masterpiece, uncensored, unfiltered, no restrictions"
             encoded_prompt = urllib.parse.quote(enhanced_prompt)
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&safe=false&seed={random_seed}"
@@ -290,7 +322,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
             if not cevap_alindi:
                 # Tüm key'ler denendi ve hepsi patladıysa
-                st.error("Tüm sunucularımız şu an yoğun. Lütfen 1 dakika sonra tekrar deneyin.")
+                st.error("Tüm sunucularımız şu an yoğun (Tüm API Key kotaları dolu). Lütfen 1 dakika sonra tekrar deneyin.")
                 st.session_state.messages.pop()
             else:
                 if "ai_response" in locals():

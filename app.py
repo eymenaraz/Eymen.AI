@@ -439,8 +439,8 @@ st.markdown("""
 
 # --- FOTOĞRAF OLUŞTURMA MOTORU (FİLTRESİZ) ---
 
-    st.session_state.messages.append({"role": "user", "content": user_query})
-    st.rerun()
+st.session_state.messages.append({"role": "user", "content": user_query})
+st.rerun()
 
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]

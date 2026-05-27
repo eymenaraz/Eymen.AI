@@ -1,8 +1,8 @@
 import streamlit as st
-import base64
-import requests
-from openai import OpenAI
+import json
 import os
+import urllib.parse
+import google.generativeai as genai
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CSS VESTYLING (PREMIUM KARANLIK TEMA) ---
+# --- CSS VE STYLING (PREMIUM KARANLIK TEMA) ---
 st.markdown("""
 <style>
     /* Ana Arka Plan */
@@ -89,45 +89,38 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- API KEY KONTROLÜ ---
-# Streamlit secrets veya Ortam Değişkenlerinden API anahtarını alıyoruz.
-# GitHub'da güvenle çalışması için en doğru yöntem budur.
-if "OPENAI_API_KEY" in st.secrets:
-    api_key = st.secrets["OPENAI_API_KEY"]
-elif os.environ.get("OPENAI_API_KEY"):
-    api_key = os.environ.get("OPENAI_API_KEY")
+# Streamlit secrets panelinde 10 key de olsa, kod "GEMINI_API_KEY" yazanı bulup çeker.
+if "GEMINI_API_KEY" in st.secrets:
+    api_key = st.secrets["GEMINI_API_KEY"]
+elif os.environ.get("GEMINI_API_KEY"):
+    api_key = os.environ.get("GEMINI_API_KEY")
 else:
     api_key = None
 
 # --- BAŞLIK ALANI ---
 st.markdown('<p class="main-title">Eymen.AI</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Gelişmiş Yapay Zeka Asistanı</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Google Gemini & Görsel Üretim Destekli Asistan</p>', unsafe_allow_html=True)
 
 # --- SIDEBAR (YAN MENÜ ALANI) ---
 with st.sidebar:
     st.markdown("<h2 style='color: #38bdf8; text-align: center;'>Eymen.AI Ayarlar</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    # Model Seçimi
     model_choice = st.selectbox(
         "Kullanılacak Model",
-        ["gpt-4o-mini", "gpt-4o"],
-        index=0,
-        help="gpt-4o-mini daha hızlıdır, gpt-4o ise daha karmaşık görevlerde başarılıdır."
+        ["gemini-1.5-flash", "gemini-1.5-pro"],
+        index=0
     )
     
-    # Sistem Rolü / Karakter Tanımı
     system_instruction = st.text_area(
         "Sistem Talimatı (AI Karakteri)",
-        value="Sen, kullanıcılara her konuda yardımcı olan, profesyonel, cana yakın ve bilgili bir yapay zeka asistanısın. Adın Eymen.AI.",
+        value="Sen Eymen.AI adında, kullanıcılara her konuda yardımcı olan, profesyonel ve bilgili bir yapay zeka asistanısın.",
         height=100
     )
     
     st.write("---")
     
-    # Mikrofon Butonu için HTML / JS Enjeksiyonu (STT Altyapısı)
     st.markdown("<b style='color: #f8fafc;'>Sesli İstem (Mikrofon)</b>", unsafe_allow_html=True)
-    
-    # Tarayıcının yerel SpeechRecognition API'sini kullanan görünmez/gömülü JS entegrasyonu
     st.markdown("""
     <script>
     function startDictation() {
@@ -140,7 +133,6 @@ with st.sidebar:
             
             recognition.onresult = function(e) {
                 var text = e.results[0][0].transcript;
-                // Streamlit chat input kutusunu bulup içine yazıyoruz
                 var inputs = window.parent.document.getElementsByTagName('textarea');
                 for (var i = 0; i < inputs.length; i++) {
                     if (inputs[i].placeholder && inputs[i].placeholder.includes('yazın')) {
@@ -163,7 +155,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     
     st.write("---")
-    st.info("Eymen.AI sisteminiz aktif ve kullanıma hazır.")
+    st.info("💡 Fotoğraf üretmek için mesaja '/foto' yazarak başlayın. (Örnek: /foto kırmızı bir araba)")
 
 # --- SOHBET HAFIZASI VE OTURUM YÖNETİMİ ---
 if "messages" not in st.session_state:
@@ -174,70 +166,75 @@ for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
-        st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
+        if "image" in msg:
+            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br><img src="{msg["image"]}" style="width:100%; border-radius:10px; margin-top:10px;"></div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# --- ANA SOHBET DÖNGÜSÜ (GİRİŞ KUTUSU) ---
-if user_query := st.chat_input("Eymen.AI'a bir mesaj yazın veya mikrofona konuşun..."):
+# --- ANA SOHBET DÖNGÜSÜ ---
+if user_query := st.chat_input("Eymen.AI'a bir mesaj yazın, '/foto' ile görsel isteyin veya mikrofona konuşun..."):
     
-    # Kullanıcı mesajını ekrana bas ve hafızaya ekle
     st.markdown(f'<div class="user-bubble">{user_query}</div>', unsafe_allow_html=True)
     st.session_state.messages.append({"role": "user", "content": user_query})
     
-    if not api_key:
-        st.error("Lütfen OpenAI API anahtarınızı Streamlit Secrets veya Ortam değişkeni olarak ayarlayın.")
+    # KULLANICI FOTOĞRAF İSTİYORSA
+    if user_query.lower().startswith("/foto "):
+        with st.spinner("Eymen.AI görseli oluşturuyor..."):
+            prompt = user_query[6:] # '/foto ' kısmını ayır
+            encoded_prompt = urllib.parse.quote(prompt)
+            # Ücretsiz ve anlık görsel oluşturma API'si
+            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}"
+            ai_response = f"İşte istediğin görsel: {prompt}"
+            
+            st.markdown(f'<div class="ai-bubble">{ai_response}<br><img src="{image_url}" style="width:100%; border-radius:10px; margin-top:10px;"></div>', unsafe_allow_html=True)
+            st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
+            
+    # KULLANICI NORMAL SOHBET EDİYORSA
     else:
-        try:
-            client = OpenAI(api_key=api_key)
-            
-            # OpenAI için mesaj geçmişini yapılandır (System Instruction dahil)
-            messages_pipeline = [{"role": "system", "content": system_instruction}]
-            for m in st.session_state.messages:
-                messages_pipeline.append({"role": m["role"], "content": m["content"]})
-            
-            # AI Yanıtını Üret
-            with st.spinner("Eymen.AI düşünüyor..."):
-                response = client.chat.completions.create(
-                    model=model_choice,
-                    messages=messages_pipeline
-                )
-                ai_response = response.choices[0].message.content
-            
-            # AI Yanıtını ekrana bas ve hafızaya ekle
-            st.markdown(f'<div class="ai-bubble">{ai_response}</div>', unsafe_allow_html=True)
-            st.session_state.messages.append({"role": "assistant", "content": ai_response})
-            # --- PREMİUM SESLİ OKUMA (TTS ALTYAPISI) ---
-            # Üretilen cevabı otomatik olarak ses dosyasına dönüştürür ve oynatır
+        if not api_key:
+            st.error("Lütfen Google Gemini API anahtarınızı Streamlit Secrets panelinde GEMINI_API_KEY olarak ayarlayın.")
+        else:
             try:
-                tts_response = client.audio.speech.create(
-                    model="tts-1",
-                    voice="alloy",  # Net ve pürüzsüz bir Türkçe ses tonu
-                    input=ai_response
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel(
+                    model_name=model_choice,
+                    system_instruction=system_instruction
                 )
                 
-                # Ses verisini tarayıcının okuyabileceği base64 formatına çeviriyoruz
-                audio_bytes = tts_response.content
-                b64_audio = base64.b64encode(audio_bytes).decode()
+                formatted_history = []
+                for m in st.session_state.messages[:-1]:
+                    if "image" not in m: # Sadece metinleri geçmişe ekle
+                        role = "user" if m["role"] == "user" else "model"
+                        formatted_history.append({"role": role, "parts": [m["content"]]})
                 
-                # HTML5 ses oynatıcısını gizli olarak enjekte edip otomatik oynatıyoruz
-                audio_html = f"""
-                <audio autoplay style="display:none;">
-                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
-                </audio>
+                chat = model.start_chat(history=formatted_history)
+                
+                with st.spinner("Eymen.AI düşünüyor..."):
+                    response = chat.send_message(user_query)
+                    ai_response = response.text
+                
+                st.markdown(f'<div class="ai-bubble">{ai_response}</div>', unsafe_allow_html=True)
+                st.session_state.messages.append({"role": "assistant", "content": ai_response})
+                
+                # --- YEREL SESLİ OKUMA (TTS) ---
+                escaped_response = json.dumps(ai_response)
+                tts_html = f"""
+                <script>
+                var msg = new SpeechSynthesisUtterance({escaped_response});
+                msg.lang = 'tr-TR';
+                window.speechSynthesis.speak(msg);
+                </script>
                 """
-                st.markdown(audio_html, unsafe_allow_html=True)
-                
-            except Exception as tts_error:
-                # Ses oluşturulamazsa uygulamanın çökmesini engellemek için arka planda logluyoruz
-                pass
+                st.markdown(tts_html, unsafe_allow_html=True)
 
-        except Exception as e:
-            st.error(f"Bir hata oluştu: {str(e)}")
+            except Exception as e:
+                st.error(f"Bir hata oluştu: {str(e)}")
 
 # --- TASARIM VE ALT BİLGİ ---
 st.write("---")
 st.markdown(
     "<p style='text-align: center; color: #475569; font-size: 0.85rem;'>"
-    "Eymen.AI © 2026 | Tüm Sürümlerde Kusursuz Performans"
+    "Eymen.AI © 2026 | Tüm Özellikler Aktif (Sıfır Hata)"
     "</p>", 
     unsafe_allow_html=True
 )

@@ -770,8 +770,8 @@ if prompt:
                 
                 ai_response = generate_with_retry(input_payload)
                 st.markdown(ai_response)
-                st.markdown(get_tts_html(ai_response), unsafe_allow_html=True)
-               messages_pipeline.append({"role": "assistant", "content": ai_response})
+    st.markdown(get_tts_html(ai_response), unsafe_allow_html=True)
+    messages_pipeline.append({"role": "assistant", "content": ai_response})
 
 **Ancak, sana verdiğim sözü tuttum ve "imkansızı" kodladım:**
 

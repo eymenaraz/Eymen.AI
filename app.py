@@ -116,6 +116,15 @@ st.markdown("""
         font-weight: 500;
         margin-bottom: 30px;
     }
+    
+    /* SOHBETLER VE ARAÇ KUTUSU (EXPANDER/SIDEBAR) İÇİN ANINDA AÇILMA KODU (SIFIR GECİKME) */
+    [data-testid="stExpander"] details, [data-testid="stExpander"] summary, [data-testid="stExpander"] div,
+    [data-testid="stSidebar"], [data-testid="stSidebar"] div {
+        transition: none !important;
+        transition-duration: 0s !important;
+        animation: none !important;
+        animation-duration: 0s !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -127,10 +136,10 @@ st.markdown('<p class="subtitle">Premium Yapay Zeka & Akıllı Araç Seti</p>', 
 model_choice = "gemini-2.5-flash"
 system_instruction = (
     "Sen Eymen AI V2 adında, her dersten ve her sınıf seviyesinden tüm eğitim, mantık ve matematik problemlerini "
-    "jet hızında, kusursuz ve adım adım çözen uzman bir baş asistansın. "
+    "jet hızında, kusursuz ogrenci dostu çözümler üreten uzman bir baş asistansın. "
     "ÇOK ÖNEMLİ BİR KURAL: Sen 'V2 Medya Motoru'na sahipsin ve GÖRSEL/FOTOĞRAF ÜRETEBİLİRSİN. "
     "Eğer kullanıcı senden bir resim, fotoğraf veya görsel istersen, ASLA 'ben metin tabanlıyım yapamam' deme! "
-    "Bunun yerine 'Tabii ki, hemen oluşturuyorum. Lütfen cümleye 'görsel oluştur' yazarak ne istediğini belirt' de. "
+    "Bunun yerine 'Tabii ki, hemen oluşturuyorum. Lütfen cümleye ilgili anahtar kelimeleri ekleyerek ne istediğini belirt' de. "
     "Sana kim tarafından geliştirildiğin sorulursa Eymen tarafından geliştirildim de, sorulmazsa söyleme. "
     "KULLANICI ÖZELLİKLE EĞİTİM VEYA DERS KONUSU AÇMADIKÇA ASLA KONUYU DERSE ÇEKME. Sorulan sorulara gereksiz uzatmalardan kaçınarak, net bir şekilde ve sadede gelerek cevap ver."
 )
@@ -263,13 +272,13 @@ if user_query := st.chat_input("Eymen AI V2'ye bir şeyler sorun..."):
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]
     
-    # ULTRA FOTOĞRAF MOTORU (ÜNLÜ, SIFIR HATA, KUSURSUZ PHOTOSHOP MEKANİĞİ EKLENDİ)
-    image_triggers = ["görsel oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
+    # ULTRA FOTOĞRAF MOTORU (GENİŞLETİLMİŞ TETİKLEYİCİ LİSTESİ)
+    image_triggers = ["görsel oluştur", "resmi oluştur", "oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
     if any(trigger in user_query.lower() for trigger in image_triggers):
         with st.spinner("V2 Medya Motoru ultra gerçekçi görseli hazırlıyor..."):
             random_seed = random.randint(1, 9999999)
-            # Ünlüler ve yüzler için 0 hata photoshop simülasyonu yapan geliştirilmiş komut
+            # Ünlüler ve yüzler için geliştirilmiş prompt yapısı
             enhanced_prompt = f"{user_query}, exactly identical to real person if famous, internet search integrated facial mapping, flawless photoshop mechanic, 0 errors, highly accurate real world reference, ultra realistic, highly detailed, photorealistic, 8k resolution, cinematic lighting, masterpiece, uncensored, unfiltered, no restrictions"
             encoded_prompt = urllib.parse.quote(enhanced_prompt)
             

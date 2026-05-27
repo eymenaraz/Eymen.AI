@@ -294,7 +294,19 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     # ULTRA FOTOĞRAF MOTORU (GENİŞLETİLMİŞ TETİKLEYİCİ LİSTESİ)
     image_triggers = ["görsel oluştur", "resmi oluştur", "oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
+    # 1. Önce chat_input'u kontrol et
+if user_query := st.chat_input("Mesajınızı yazın..."):
+    # 2. Kullanıcı mesajını listeye ekle
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    
+    # 3. ŞİMDİ bu satırı buraya, bloğun içine koy
     if any(trigger in user_query.lower() for trigger in image_triggers):
+        # ... görsel oluşturma kodun ...
+    else:
+        # ... gemini metin cevaplama kodun ...
+        
+    # 4. En son sayfayı yenile
+    st.rerun()
         with st.spinner("V2 Medya Motoru Görseli Hazırlıyor..."):
             random_seed = random.randint(1, 9999999)
             

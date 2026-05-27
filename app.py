@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eymen AI V2",
+    page_title="Eymen AI V2 - Premium",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -110,24 +110,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# --- ÇOKLU API KEY OTOMATİK TARAMA SİSTEMİ ---
-@st.cache_resource
-def get_working_api_key():
-    for i in range(1, 11):
-        key_name = f"KEY_{i}"
-        if key_name in st.secrets:
-            potential_key = st.secrets[key_name]
-            try:
-                genai.configure(api_key=potential_key)
-                model = genai.GenerativeModel("gemini-2.5-flash")
-                model.generate_content("test", generation_config={"max_output_tokens": 1})
-                return potential_key
-            except Exception:
-                continue
-    return None
-
-api_key = get_working_api_key()
 
 # --- BAŞLIK ALANI (ÖZEL NEON TASARIM) ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eymen AI</span><span class="brand-v2">V2</span></div>', unsafe_allow_html=True)
@@ -253,7 +235,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     image_triggers = ["görsel oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
     if any(trigger in user_query.lower() for trigger in image_triggers):
-        with st.spinner("V2 Medya Motoru ultra gerçekçi görseli hazırlıyor..."):
+        with st.spinner("V2 Medya Motoru görseli hazırlıyor..."):
             random_seed = random.randint(1, 9999999)
             # İnternet verilerinden beslenmiş hissi veren, tamamen sansürsüz ve detaylı komut
             enhanced_prompt = f"{user_query}, highly accurate internet search details, real world reference, ultra realistic, highly detailed, photorealistic, 8k resolution, cinematic lighting, masterpiece, uncensored, unfiltered, no restrictions"
@@ -265,37 +247,55 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             st.rerun()
             
-    # GÜÇLENDİRİLMİŞ GEMINI 2.5 FLASH ZEKA MOTORU
+    # GÜÇLENDİRİLMİŞ GEMINI 2.5 FLASH ZEKA MOTORU (OTOMATİK NÖBETÇİ KEY SİSTEMİ İLE)
     else:
-        if not api_key:
-            st.error("Kotanızı doldurdunuz. Lütfen API ayarlarınızı kontrol edin veya yeni geliştirmeleri bekleyin.")
-            st.session_state.messages.pop() 
-        else:
-            try:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel(
-                    model_name=model_choice,
-                    system_instruction=system_instruction
-                )
-                
-                formatted_history = []
-                for m in st.session_state.messages[:-1]:
-                    if "image" not in m:
-                        role = "user" if m["role"] == "user" else "model"
-                        formatted_history.append({"role": role, "parts": [m["content"]]})
-                
-                chat = model.start_chat(history=formatted_history)
-                
-                with st.spinner("Eymen AI V2 düşünüyor..."):
-                    response = chat.send_message(user_query)
-                    ai_response = response.text
-                
-                st.session_state.messages.append({"role": "assistant", "content": ai_response})
-                st.rerun()
+        with st.spinner("Eymen AI V2 düşünüyor..."):
+            formatted_history = []
+            for m in st.session_state.messages[:-1]:
+                if "image" not in m:
+                    role = "user" if m["role"] == "user" else "model"
+                    formatted_history.append({"role": role, "parts": [m["content"]]})
+            
+            cevap_alindi = False
+            
+            # 10 Key'i sırayla deneyecek olan Akıllı Döngü
+            for i in range(1, 11):
+                key_name = f"KEY_{i}"
+                if key_name in st.secrets:
+                    aktif_key = st.secrets[key_name]
+                    try:
+                        genai.configure(api_key=aktif_key)
+                        model = genai.GenerativeModel(
+                            model_name=model_choice,
+                            system_instruction=system_instruction
+                        )
+                        chat = model.start_chat(history=formatted_history)
+                        response = chat.send_message(user_query)
+                        
+                        ai_response = response.text
+                        cevap_alindi = True
+                        break # Cevap başarılıysa döngüden çık, diğer keyleri yorma
+                        
+                    except Exception as e:
+                        hata_metni = str(e)
+                        # Eğer hata Kota (429) hatasıysa, sessizce diğer key'e geç
+                        if "429" in hata_metni or "Quota" in hata_metni:
+                            continue 
+                        else:
+                            # Başka sistemsel bir hata varsa direkt göster
+                            st.error(f"Sistem hatası: {hata_metni}")
+                            cevap_alindi = True
+                            st.session_state.messages.pop()
+                            break
 
-            except Exception as e:
-                st.error(f"Sistem hatası meydana geldi: {str(e)}")
+            if not cevap_alindi:
+                # Tüm key'ler denendi ve hepsi patladıysa
+                st.error("Tüm sunucularımız şu an yoğun. Lütfen 1 dakika sonra tekrar deneyin.")
                 st.session_state.messages.pop()
+            else:
+                if "ai_response" in locals():
+                    st.session_state.messages.append({"role": "assistant", "content": ai_response})
+                st.rerun()
 
 # --- ALT BİLGİ VE YAN MENÜ OTOMATİK KAPATMA SCRİPTİ ---
 st.write("---")

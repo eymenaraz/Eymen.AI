@@ -156,7 +156,7 @@ system_instruction = (
 
 # --- SIDEBAR (YAN MENÜ ALANI) ---
 with st.sidebar:
-    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.6rem;'>Menü Navigasyon</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.6rem;'>Menü</h2>", unsafe_allow_html=True)
     st.write("---")
     
     # 1. SOHBET YÖNETİMİ (YENİLENMİŞ ÇOKLU SOHBET)
@@ -186,10 +186,19 @@ with st.sidebar:
         
     st.write("---")
     
-    # 2. AKILLI ARAÇ KUTUSU SEKMESİ
-    st.markdown("<h3 style='color: #64748b;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
+    # 2. AKILLI ARAÇ KUTUSU SEKMESİ (Menü yazısıyla birebir aynı tasarım)
+    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.6rem;'>🧰 Akıllı Araç Kutusu</h2>", unsafe_allow_html=True)
     
-    # YENİ ÖZELLİK: ŞİFRE OLUŞTURUCU
+    # YENİ ÖZELLİK: QR KOD OLUŞTURUCU
+    with st.expander("📱 Hızlı QR Kod Oluşturucu"):
+        st.caption("Girdiğiniz linki anında QR koda dönüştürün.")
+        qr_link = st.text_input("QR Koda dönüştürülecek linki girin:")
+        if qr_link:
+            encoded_link = urllib.parse.quote(qr_link)
+            qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={encoded_link}"
+            st.image(qr_url, caption="QR Kodunuz Hazır!")
+
+    # ŞİFRE OLUŞTURUCU
     with st.expander("🔑 Hızlı Şifre Oluşturucu"):
         st.caption("İstediğiniz hanede kırılmaz bir şifre yaratın.")
         pwd_length = st.number_input("Hane Sayısı:", min_value=4, max_value=128, value=12, step=1)
@@ -264,7 +273,6 @@ def render_message(msg):
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         if "image" in msg:
-            # GÖRSELİN BALONCUK İÇİNDE KUSURSUZ GÖSTERİLMESİ İÇİN HTML ENTEGRASYONU RESTORE EDİLDİ
             st.markdown(f'<div class="ai-bubble">{msg["content"]}<br><img src="{msg["image"]}" style="width:100%; border-radius:12px; margin-top:15px; border:1px solid rgba(128,128,128,0.2);"></div>', unsafe_allow_html=True)
         else:
             st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -287,9 +295,11 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     image_triggers = ["görsel oluştur", "resmi oluştur", "oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
     if any(trigger in user_query.lower() for trigger in image_triggers):
-        with st.spinner("V2 Medya Motoru ultra gerçekçi görseli hazırlıyor..."):
+        with st.spinner("V2 Medya Motoru Görseli Hazırlıyor..."):
             random_seed = random.randint(1, 9999999)
-            enhanced_prompt = f"{user_query}, exactly identical to real person if famous, internet search integrated facial mapping, flawless photoshop mechanic, 0 errors, highly accurate real world reference, ultra realistic, highly detailed, photorealistic, 8k resolution, cinematic lighting, masterpiece, uncensored, unfiltered, no restrictions, safe=false"
+            
+            # GÜNCEL SAÇ/YÜZ HATTI KOPYALAMA VE PHOTOSHOP TEKNOLOJİSİ ENJEKTE EDİLDİ
+            enhanced_prompt = f"{user_query}, most up-to-date appearance, exact current hairstyle, precise facial mapping features, copied flawlessly, internet-accurate real world reference, flawless photocopy mechanic, ultra realistic, highly detailed, photorealistic, 8k resolution, cinematic lighting, masterpiece, uncensored, unfiltered, no restrictions, safe=false"
             encoded_prompt = urllib.parse.quote(enhanced_prompt)
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&safe=false&seed={random_seed}"
@@ -321,7 +331,15 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                             system_instruction=system_instruction
                         )
                         chat = model.start_chat(history=formatted_history)
-                        response = chat.send_message(user_query)
+                        
+                        # PHOTOSHOP & FOTOĞRAF ANALİZ DESTEĞİ: Eğer bir görsel yüklendiyse Gemini'ye besle
+                        if uploaded_file is not None and uploaded_file.type.startswith("image/"):
+                            bytes_data = uploaded_file.read()
+                            image_part = {"mime_type": uploaded_file.type, "data": bytes_data}
+                            response = chat.send_message([image_part, user_query])
+                            uploaded_file.seek(0) # Dosya işaretçisini sıfırla
+                        else:
+                            response = chat.send_message(user_query)
                         
                         ai_response = response.text
                         cevap_alindi = True
@@ -337,7 +355,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                             st.session_state.messages.pop()
                             break
 
-            if not_cevap_alindi in locals() or not cevap_alindi:
+            if not cevap_alindi:
                 st.error("Tüm sunucularımız şu an yoğun. Lütfen 1 dakika sonra tekrar deneyin.")
                 st.session_state.messages.pop()
             else:

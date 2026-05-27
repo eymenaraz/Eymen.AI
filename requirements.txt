@@ -4,3 +4,6 @@ streamlit-theme
 streamlit
 google-generativeai
 pytz
+streamlit
+openai
+requests

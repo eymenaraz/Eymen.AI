@@ -435,23 +435,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- BAŞLIK ---
-st.markdown('<div style="text-align:center;"><span class="brand-eymen">Eymen AI</span><span class="brand-v2">V2</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Premium Yapay Zeka & Akıllı Araç Seti</p>', unsafe_allow_html=True)
 
-# --- SIDEBAR ---
-with st.sidebar:
-    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.6rem;'>Menü</h2>", unsafe_allow_html=True)
-    st.write("---")
-    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.6rem;'>Akıllı Araç Kutusu</h2>", unsafe_allow_html=True)
-    
-    with st.expander("📱 Hızlı QR Kod Oluşturucu"):
-        qr_link = st.text_input("Link:")
-        if qr_link:
-            st.image(f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(qr_link)}")
 
 # --- FOTOĞRAF OLUŞTURMA MOTORU (FİLTRESİZ) ---
-if user_query := st.chat_input("Mesajınızı yazın..."):
+
     st.session_state.messages.append({"role": "user", "content": user_query})
     st.rerun()
 

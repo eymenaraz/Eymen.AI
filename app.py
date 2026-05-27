@@ -9,7 +9,7 @@ import google.generativeai as genai
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eymen AI V2"
+    page_title="Eymen AI V2,"
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"

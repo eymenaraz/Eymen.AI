@@ -1,23 +1,19 @@
 import streamlit as st
-import json
-import urllib.parse
-import random
-import string
-import math
+import json, urllib.parse, random, string, math
 import google.generativeai as genai
 from google.api_core import exceptions
 
-# --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Eymen AI V2 - Full System", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Eymen AI V2", page_icon="🤖", layout="wide")
 
-# --- CSS (Arayüz) ---
+# --- CSS VE LOGO ---
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f8fafc; }
-    .user-bubble { background: #3b82f6; color: white; padding: 12px; border-radius: 15px; margin: 5px 0 5px auto; width: fit-content; }
-    .ai-bubble { background: #1e293b; color: #e2e8f0; padding: 12px; border-radius: 15px; margin: 5px auto 5px 0; width: fit-content; border: 1px solid #334155; }
-    .tts-button { background: #0ea5e9; color: white; border: none; border-radius: 8px; padding: 5px 10px; cursor: pointer; margin-top: 5px; font-size: 0.8rem; }
+    .brand { font-size: 2.5rem; font-weight: 900; color: #38bdf8; text-align: center; text-shadow: 0 0 10px #38bdf8; }
+    .user-bubble { background: #3b82f6; color: white; padding: 12px; border-radius: 15px; margin: 5px 0; }
+    .ai-bubble { background: #1e293b; color: #e2e8f0; padding: 12px; border-radius: 15px; margin: 5px 0; border: 1px solid #334155; }
 </style>
+<div class="brand">EYMEN AI V2</div>
 """, unsafe_allow_html=True)
 
 # --- API YÖNETİMİ ---
@@ -31,71 +27,61 @@ def get_model():
         except: continue
     return None
 
-# --- SOHBETİ EKRANA YAZDIRMA ---
-if "messages" not in st.session_state: st.session_state.messages = []
-for msg in st.session_state.messages:
-    if msg["role"] == "user": 
-        st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
-    else:
-        st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
-        if "image" in msg: st.image(msg["image"], use_container_width=True)
-        safe_text = json.dumps(msg["content"])
-        st.markdown(f'<button class="tts-button" onclick="window.speechSynthesis.speak(new SpeechSynthesisUtterance({safe_text}))">🔊 Sesli Dinle</button>', unsafe_allow_html=True)
+# --- SOHBET YÖNETİMİ ---
+if "chats" not in st.session_state: st.session_state.chats = {"Sohbet 1": []}
+if "current_chat" not in st.session_state: st.session_state.current_chat = "Sohbet 1"
 
-# --- SOHBET VE FOTOĞRAF MOTORU ---
-if user_query := st.chat_input("Eymen AI'ye bir şeyler sorun veya görsel oluşturun..."):
-    st.session_state.messages.append({"role": "user", "content": user_query})
+# --- YAN MENÜ ---
+with st.sidebar:
+    st.header("🗂️ Sohbetlerin")
+    # Yeni Sohbet Ekle
+    if st.button("➕ Yeni Sohbet"):
+        new_name = f"Sohbet {len(st.session_state.chats) + 1}"
+        st.session_state.chats[new_name] = []
     
+    # Sohbet Listesi ve Silme
+    for chat_name in list(st.session_state.chats.keys()):
+        cols = st.columns([3, 1])
+        if cols[0].button(chat_name, key=f"btn_{chat_name}"):
+            st.session_state.current_chat = chat_name
+        if cols[1].button("🗑️", key=f"del_{chat_name}"):
+            del st.session_state.chats[chat_name]
+            if st.session_state.current_chat == chat_name: st.session_state.current_chat = list(st.session_state.chats.keys())[0]
+            st.rerun()
+
+    st.write("---")
+    # ARAÇLAR
+    with st.expander("🧮 Hesap Makinesi"):
+        if "calc" not in st.session_state: st.session_state.calc = ""
+        st.text(st.session_state.calc)
+        if st.button("√x"): st.session_state.calc = str(math.sqrt(float(eval(st.session_state.calc)))); st.rerun()
+        if st.button("C"): st.session_state.calc = ""
+
+    with st.expander("🪄 QR Kod"):
+        txt = st.text_input("Metin:")
+        if st.button("Oluştur"): st.image(f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={urllib.parse.quote(txt)}")
+
+    with st.expander("🔑 Şifre Üretici"):
+        n = st.slider("Hane", 4, 32, 12)
+        if st.button("Üret"): st.code("".join(random.choices(string.ascii_letters + string.digits, k=n)))
+
+# --- SOHBET EKRANI ---
+messages = st.session_state.chats[st.session_state.current_chat]
+for msg in messages:
+    if msg["role"] == "user": st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
+    else: 
+        st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
+        if "image" in msg: st.image(msg["image"])
+
+if user_query := st.chat_input("Mesajın..."):
+    messages.append({"role": "user", "content": user_query})
     triggers = ["görsel oluştur", "çiz", "hayal et", "resim", "fotoğraf"]
     if any(t in user_query.lower() for t in triggers):
-        img_url = f"https://pollinations.ai/p/{urllib.parse.quote(user_query)}?width=1024&height=1024&seed={random.randint(1000,999999)}&nologo=true"
-        st.session_state.messages.append({"role": "assistant", "content": "İşte görselin:", "image": img_url})
+        url = f"https://pollinations.ai/p/{urllib.parse.quote(user_query)}?width=1024&height=1024&seed={random.randint(1,99999)}&nologo=true"
+        messages.append({"role": "assistant", "content": "Görsel:", "image": url})
     else:
         model = get_model()
         if model:
-            try:
-                response = model.generate_content(user_query)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-            except exceptions.ResourceExhausted:
-                st.error("⚠️ Tüm API anahtarlarının kotası dolu! Lütfen bekleyin veya yeni anahtar tanımlayın.")
-        else:
-            st.error("⚠️ Aktif API anahtarı bulunamadı!")
+            res = model.generate_content(user_query)
+            messages.append({"role": "assistant", "content": res.text})
     st.rerun()
-
-# --- SIDEBAR ARAÇLARI ---
-with st.sidebar:
-    st.header("🧰 Araç Kutusu")
-    if st.button("🗑️ Sohbeti Temizle"): st.session_state.messages = []; st.rerun()
-    
-    # 1. HESAP MAKİNESİ
-    with st.expander("🧮 Gelişmiş Hesap Makinesi"):
-        if "calc" not in st.session_state: st.session_state.calc = ""
-        st.text_input("Sonuç", value=st.session_state.calc, disabled=True)
-        cols = st.columns(4)
-        buttons = ["7","8","9","/","4","5","6","*","1","2","3","-","0",".","+","C"]
-        for i, btn in enumerate(buttons):
-            if cols[i%4].button(btn):
-                if btn == "C": st.session_state.calc = ""
-                else: st.session_state.calc += btn
-                st.rerun()
-        if st.button("Karekök (√)"):
-            try: st.session_state.calc = str(math.sqrt(float(eval(st.session_state.calc))))
-            except: st.session_state.calc = "Hata"
-            st.rerun()
-        if st.button("HESAPLA (=)"):
-            try: st.session_state.calc = str(eval(st.session_state.calc))
-            except: st.session_state.calc = "Hata"
-            st.rerun()
-
-    # 2. QR OLUŞTURUCU
-    with st.expander("🪄 QR Kod Oluşturucu"):
-        qr_txt = st.text_input("QR için metin:")
-        if st.button("QR Üret"):
-            st.image(f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(qr_txt)}")
-
-    # 3. ŞİFRE OLUŞTURUCU
-    with st.expander("🔑 Şifre Oluşturucu"):
-        n = st.slider("Hane Sayısı", 4, 32, 12)
-        if st.button("Şifre Üret"):
-            chars = string.ascii_letters + string.digits + "!@#$%"
-            st.code("".join(random.choice(chars) for _ in range(n)))

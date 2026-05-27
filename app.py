@@ -430,4 +430,23 @@ if prompt := st.chat_input("Eymen AI V2'ye bir şeyler sor..."):
             st.markdown(notification_text)
             st.markdown(get_tts_html(notification_text), unsafe_allow_html=True)
             
-            # Verileri hafızaya kaydet (Her iki element de sırayla pipeline'a eklenerek geçmiş güvence
+            # Verileri hafızaya kaydet (Her iki element de sırayla pipeline'a eklenerek geçmiş güvenceye alınır)
+            messages_pipeline.append({"role": "assistant", "content": notification_text})
+            messages_pipeline.append({"role": "assistant", "content": computed_image_url, "type": "image"})
+            
+        # V2 Gelişmiş Sohbet ve Doküman Çözümleme Modu
+        else:
+            with st.spinner("Eymen AI V2 analiz ediyor..."):
+                input_payload = [prompt]
+                
+                # Dosya okuma ve analiz bloğu
+                if uploaded_file:
+                    if uploaded_file.name.lower().endswith(".pdf"):
+                        input_payload.append({"mime_type": "application/pdf", "data": uploaded_file.getvalue()})
+                    else:
+                        input_payload.append(Image.open(uploaded_file))
+                
+                ai_response = generate_with_retry(input_payload)
+                st.markdown(ai_response)
+                st.markdown(get_tts_html(ai_response), unsafe_allow_html=True)
+                messages_pipeline.append({"role": "assistant", "content": ai_response})

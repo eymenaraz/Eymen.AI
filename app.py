@@ -15,65 +15,66 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CSS VE STYLING (ÖZEL NEON LOGO & IPHONE MOBİL DÜZELTMESİ) ---
+# --- CSS VE STYLING (PREMIUM, LIGHT/DARK MODE & IPHONE MOBİL DÜZELTMESİ) ---
 st.markdown("""
 <style>
-    /* Ana Arka Plan */
-    .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        color: #f8fafc;
-    }
-    
     /* IPHONE VE MOBİL GİRİŞ DÜZELTMESİ (Auto-Zoom Engelleme) */
     [data-testid="stChatInput"] textarea, .stTextInput input, textarea {
         font-size: 16px !important;
     }
     
-    /* Yan Menü (Sidebar) */
+    /* Yan Menü (Sidebar) Premium Geçişler */
     [data-testid="stSidebar"] {
-        background-color: #0b0f19 !important;
-        border-right: 1px solid #1e293b;
+        border-right: 1px solid rgba(128, 128, 128, 0.2);
+        backdrop-filter: blur(10px);
     }
     
-    /* Sohbet Giriş Kutusu */
+    /* Sohbet Giriş Kutusu Premium Hissiyat */
     .stTextInput input {
-        background-color: #1e293b !important;
-        color: #f8fafc !important;
-        border: 1px solid #334155 !important;
         border-radius: 12px !important;
         padding: 12px 16px !important;
+        transition: all 0.3s ease;
     }
     
-    .stTextInput input:focus {
-        border-color: #38bdf8 !important;
-        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
-    }
-    
-    /* Kullanıcı Mesaj Balonu */
+    /* Kullanıcı Mesaj Balonu (Modern Cam Efekti) */
     .user-bubble {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: white;
-        padding: 14px 18px;
+        padding: 16px 20px;
         border-radius: 20px 20px 4px 20px;
         margin: 10px 0 10px auto;
         max-width: 75%;
         width: fit-content;
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 1.05rem;
     }
     
     /* Asistan Mesaj Balonu */
     .ai-bubble {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        color: #e2e8f0;
-        padding: 14px 18px;
+        position: relative; /* İkonun sağ alta konumlanması için gerekli */
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+        color: #f8fafc;
+        padding: 16px 20px 35px 20px; /* Alttan ikon için ekstra boşluk */
         border-radius: 20px 20px 20px 4px;
         margin: 10px auto 10px 0;
         max-width: 75%;
         width: fit-content;
-        border: 1px solid #27272a;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 1.05rem;
+        backdrop-filter: blur(8px);
+    }
+
+    /* Light Mode İçin Renk Ayarlamaları */
+    @media (prefers-color-scheme: light) {
+        .ai-bubble {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+        }
     }
     
     /* Çift Renkli Neon Parlayan Logo Tasarımı */
@@ -83,46 +84,47 @@ st.markdown("""
         padding: 10px;
     }
     .brand-eymen {
-        font-size: 3.5rem;
+        font-size: 3.8rem;
         font-weight: 900;
-        color: #1e4ed8;
+        color: #2563eb;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         letter-spacing: 1px;
-        text-shadow: 0 0 8px #1e4ed8, 0 0 20px #1e4ed8, 0 0 30px #3b82f6;
+        text-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
     }
     .brand-v2 {
-        font-size: 3.5rem;
+        font-size: 3.8rem;
         font-weight: 900;
         color: #38bdf8;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         letter-spacing: 1px;
-        text-shadow: 0 0 8px #38bdf8, 0 0 20px #38bdf8, 0 0 35px #0ea5e9;
+        text-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
         margin-left: 15px;
     }
     
     .subtitle {
-        color: #94a3b8;
+        color: #64748b;
         text-align: center;
-        font-size: 1.1rem;
+        font-size: 1.15rem;
+        font-weight: 500;
         margin-bottom: 30px;
     }
     
-    /* Sesli Dinle Butonu */
-    .tts-button {
-        background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
-        color: white;
+    /* Sesli Dinle İkonu (Sağ Alt Köşe Şeffaf İkon) */
+    .tts-icon {
+        position: absolute;
+        bottom: 8px;
+        right: 12px;
+        background: transparent;
+        color: #94a3b8;
         border: none;
-        border-radius: 8px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        font-weight: bold;
+        font-size: 1.2rem;
         cursor: pointer;
-        margin-top: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        transition: 0.3s;
+        transition: all 0.3s ease;
+        padding: 0;
     }
-    .tts-button:hover {
-        opacity: 0.8;
+    .tts-icon:hover {
+        transform: scale(1.15);
+        color: #38bdf8;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -147,7 +149,7 @@ api_key = get_working_api_key()
 
 # --- BAŞLIK ALANI (ÖZEL NEON TASARIM) ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eymen AI</span><span class="brand-v2">V2</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Gelişmiş Yapay Zeka & Akıllı Araç Seti</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Premium Yapay Zeka & Akıllı Araç Seti</p>', unsafe_allow_html=True)
 
 # --- MODEL VE SİSTEM TALİMATI AYARLARI ---
 model_choice = "gemini-2.5-flash"
@@ -165,7 +167,7 @@ with st.sidebar:
     st.write("---")
     
     # 1. SOHBETLER SEKMESİ
-    st.markdown("<h3 style='color: #f8fafc;'>💬 Sohbetler</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #64748b;'>💬 Sohbet Yönetimi</h3>", unsafe_allow_html=True)
     if st.button("🗑️ Mevcut Sohbeti Sıfırla", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
@@ -173,41 +175,7 @@ with st.sidebar:
     st.write("---")
     
     # 2. AKILLI ARAÇ KUTUSU SEKMESİ
-    st.markdown("<h3 style='color: #f8fafc;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
-    
-    # Mikrofon Butonu (STT)
-    st.markdown("""
-    <script>
-    function startDictation() {
-        if (window.hasOwnProperty('webkitSpeechRecognition')) {
-            var recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = "tr-TR";
-            recognition.start();
-            
-            recognition.onresult = function(e) {
-                var text = e.results[0][0].transcript;
-                var inputs = window.parent.document.getElementsByTagName('textarea');
-                for (var i = 0; i < inputs.length; i++) {
-                    if (inputs[i].placeholder && inputs[i].placeholder.includes('sorun...')) {
-                        inputs[i].value = text;
-                        inputs[i].dispatchEvent(new Event('input', { bubbles: true }));
-                        break;
-                    }
-                }
-                recognition.stop();
-            };
-            recognition.onerror = function(e) {
-                recognition.stop();
-            }
-        }
-    }
-    </script>
-    <button onclick="startDictation()" style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);">
-        🎤 Sesle Konuş (Mikrofon)
-    </button>
-    """, unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #64748b;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
     
     # --- YENİ SÜRPRİZ ÖZELLİK: QR KOD OLUŞTURUCU ---
     with st.expander("🪄 Sürpriz: Hızlı QR Kod Üretici"):
@@ -291,15 +259,26 @@ def render_message(msg):
         # Güvenli sesli okuma için metni temizle
         safe_text = msg["content"].replace("'", "\\'").replace('"', '\\"').replace('\n', ' ')
         
-        # Sesi oynatacak buton HTML'i
-        tts_button_html = f"""
-        <button class="tts-button" onclick="if('speechSynthesis' in window){{ window.speechSynthesis.cancel(); var m = new SpeechSynthesisUtterance('{safe_text}'); m.lang='tr-TR'; window.speechSynthesis.speak(m); }} else {{ alert('Tarayıcınız sesli okumayı desteklemiyor.'); }}">🔊 Sesli Dinle</button>
+        # Sesi oynatacak ikon HTML'i (Erkek/Tok ses için pitch ayarı düşürüldü)
+        tts_icon_html = f"""
+        <button class="tts-icon" title="Sesli Dinle" onclick="
+            if('speechSynthesis' in window) {{
+                window.speechSynthesis.cancel();
+                var m = new SpeechSynthesisUtterance('{safe_text}');
+                m.lang = 'tr-TR';
+                m.pitch = 0.7; /* Erkek/tok ses hissiyatı için tonlama düşürüldü */
+                m.rate = 1.0;
+                window.speechSynthesis.speak(m);
+            }} else {{
+                alert('Tarayıcınız sesli okumayı desteklemiyor.');
+            }}
+        ">🔊</button>
         """
         
         if "image" in msg:
-            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br><img src="{msg["image"]}" style="width:100%; border-radius:10px; margin-top:10px; border:1px solid #334155;"><br>{tts_button_html}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br><img src="{msg["image"]}" style="width:100%; border-radius:12px; margin-top:15px; border:1px solid rgba(128,128,128,0.2);"><br>{tts_icon_html}</div>', unsafe_allow_html=True)
         else:
-            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br>{tts_button_html}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br>{tts_icon_html}</div>', unsafe_allow_html=True)
 
 # --- SOHBET HAFIZASI VE OTURUM YÖNETİMİ ---
 if "messages" not in st.session_state:
@@ -318,18 +297,18 @@ if user_query := st.chat_input("Eymen AI V2'ye bir şeyler sorun..."):
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]
     
-    # ULTRA FOTOĞRAF MOTORU (GERÇEKÇİ & MULTI-PROMPT FIX)
+    # ULTRA FOTOĞRAF MOTORU (GELİŞTİRİLMİŞ SİNEMATİK PROMPT)
     image_triggers = ["görsel oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur"]
     
     if any(trigger in user_query.lower() for trigger in image_triggers):
-        with st.spinner("V2 Medya Motoru görseli oluşturuyor..."):
-            # Gerçekçilik katmak için promptu zenginleştiriyoruz ve aynı sorguda bile farklı resim vermesi için seed ekliyoruz
+        with st.spinner("V2 Medya Motoru ultra gerçekçi görseli hazırlıyor..."):
             random_seed = random.randint(1, 9999999)
-            enhanced_prompt = f"{user_query}, photorealistic, ultra detailed, hyperrealistic, 8k resolution"
+            # Daha premium ve gerçekçi bir kalite için Midjourney tarzı anahtar kelimeler eklendi
+            enhanced_prompt = f"{user_query}, award winning hyperrealistic photography, 8k resolution, highly detailed, cinematic lighting, masterpiece, photorealistic, Unreal Engine 5 render"
             encoded_prompt = urllib.parse.quote(enhanced_prompt)
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&safe=false&seed={random_seed}"
-            ai_response = f"✨ İstediğin özel görsel başarıyla üretildi!"
+            ai_response = f"✨ İstediğin ultra gerçekçi görsel başarıyla üretildi!"
             
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             st.rerun()
@@ -337,8 +316,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     # GÜÇLENDİRİLMİŞ GEMINI 2.5 FLASH ZEKA MOTORU
     else:
         if not api_key:
-            st.error("Kotanızı doldurdunuz. Bu sorunu çözmek için biraz zamana ihtiyacımız var, lütfen yeni geliştirmeleri bekleyin.")
-            # Hata alındığında son kullanıcı mesajını sil ki sistem kilitlenmesin
+            st.error("Kotanızı doldurdunuz. Lütfen API ayarlarınızı kontrol edin veya yeni geliştirmeleri bekleyin.")
             st.session_state.messages.pop() 
         else:
             try:
@@ -370,7 +348,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 # --- ALT BİLGİ ---
 st.write("---")
 st.markdown(
-    "<p style='text-align: center; color: #475569; font-size: 0.85rem;'>"
+    "<p style='text-align: center; color: #64748b; font-size: 0.9rem; font-weight: 500;'>"
     "Eymen AI V2 © 2026 | Sınırsız Zeka"
     "</p>", 
     unsafe_allow_html=True

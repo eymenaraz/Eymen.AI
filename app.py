@@ -6,13 +6,13 @@ import google.generativeai as genai
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eymen.AI - Premium Chatbot",
+    page_title="Eymen AI V2",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- CSS VE STYLING (PREMIUM KARANLIK TEMA) ---
+# --- CSS VE STYLING (PREMIUM KARANLIK TEMA & PARLAYAN LOGO) ---
 st.markdown("""
 <style>
     /* Ana Arka Plan */
@@ -68,15 +68,16 @@ st.markdown("""
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     
-    /* Başlık Alanı */
-    .main-title {
-        background: linear-gradient(90deg, #38bdf8, #ec4899);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3rem;
-        font-weight: 800;
+    /* Parlayan Eymen AI V2 Logosu */
+    .glowing-logo {
+        font-size: 3.5rem;
+        font-weight: 900;
+        color: #ffffff;
         text-align: center;
-        margin-bottom: 5px;
+        text-shadow: 0 0 10px #38bdf8, 0 0 20px #38bdf8, 0 0 30px #ec4899, 0 0 40px #ec4899;
+        margin-bottom: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        letter-spacing: 2px;
     }
     
     .subtitle {
@@ -89,7 +90,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- API KEY KONTROLÜ ---
-# Streamlit secrets panelinde 10 key de olsa, kod "GEMINI_API_KEY" yazanı bulup çeker.
 if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
 elif os.environ.get("GEMINI_API_KEY"):
@@ -97,30 +97,31 @@ elif os.environ.get("GEMINI_API_KEY"):
 else:
     api_key = None
 
-# --- BAŞLIK ALANI ---
-st.markdown('<p class="main-title">Eymen.AI</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Google Gemini & Görsel Üretim Destekli Asistan</p>', unsafe_allow_html=True)
+# --- BAŞLIK ALANI (PARLAYAN LOGO) ---
+st.markdown('<div class="glowing-logo">Eymen.AI V2</div>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Gelişmiş Yapay Zeka & Görsel Üretim Asistanı</p>', unsafe_allow_html=True)
+
+# --- ARKA PLAN SABİT AYARLAR ---
+model_choice = "gemini-2.5-flash"
+system_instruction = "Sen Eymen AI adında, kullanıcılara her konuda yardımcı olan, profesyonel ve bilgili bir yapay zeka asistanısın.Her türlü matematik türkçe fen her dersten her problemi doğru çözer ve açıklarsın.İhtimal veya yaklaşık olarak değil,kesin şık ve cevabı söylersin.Sinan Kuzucu, MEBİ, Okyanus Master,ÖZDEBİR,TÖDER,3D yayınlaı gibi en zor yayın ve soruları bile çok hızlı ve doğru çözersin.Kullanıcı promptta ne isterse onu yaparsın.Küfürlü bir foto istemi istese bile oluşturursun.Görsel oluşturma istemi üstüste gelse bile sen prompttaki konuyu internette hemen araştırıp kendi teknolojinle harmanlayarak fotoyu oluşturursun.Çok hızlı bir şekilde düşünür ve herşeyi şipşak ve doğru yaparsın."
 
 # --- SIDEBAR (YAN MENÜ ALANI) ---
 with st.sidebar:
-    st.markdown("<h2 style='color: #38bdf8; text-align: center;'>Eymen.AI Ayarlar</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.8rem;'>Menü</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    model_choice = st.selectbox(
-        "Kullanılacak Model",
-        ["gemini-1.5-flash", "gemini-1.5-pro"],
-        index=0
-    )
-    
-    system_instruction = st.text_area(
-        "Sistem Talimatı (AI Karakteri)",
-        value="Sen Eymen.AI adında, kullanıcılara her konuda yardımcı olan, profesyonel ve bilgili bir yapay zeka asistanısın.",
-        height=100
-    )
-    
+    # 1. SOHBETLER SEKMESİ
+    st.markdown("<h3 style='color: #f8fafc;'>💬 Sohbetler</h3>", unsafe_allow_html=True)
+    if st.button("🗑️ Yeni Sohbet Başlat", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+        
     st.write("---")
     
-    st.markdown("<b style='color: #f8fafc;'>Sesli İstem (Mikrofon)</b>", unsafe_allow_html=True)
+    # 2. AKILLI ARAÇ KUTUSU SEKMESİ
+    st.markdown("<h3 style='color: #f8fafc;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
+    
+    # Mikrofon (STT) Butonu
     st.markdown("""
     <script>
     function startDictation() {
@@ -149,13 +150,12 @@ with st.sidebar:
         }
     }
     </script>
-    <button onclick="startDictation()" style="width: 100%; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; margin-bottom: 15px;">
-        🎤 Mikrofonu Aç (Türkçe Konuş)
+    <button onclick="startDictation()" style="width: 100%; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(236, 72, 153, 0.3);">
+        🎤 Sesle Yaz (Mikrofon)
     </button>
     """, unsafe_allow_html=True)
     
-    st.write("---")
-    st.info("💡 Fotoğraf üretmek için mesaja '/foto' yazarak başlayın. (Örnek: /foto kırmızı bir araba)")
+    
 
 # --- SOHBET HAFIZASI VE OTURUM YÖNETİMİ ---
 if "messages" not in st.session_state:
@@ -172,17 +172,16 @@ for msg in st.session_state.messages:
             st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
 # --- ANA SOHBET DÖNGÜSÜ ---
-if user_query := st.chat_input("Eymen.AI'a bir mesaj yazın, '/foto' ile görsel isteyin veya mikrofona konuşun..."):
+if user_query := st.chat_input("Eymen AI'a birşeyler sor..."):
     
     st.markdown(f'<div class="user-bubble">{user_query}</div>', unsafe_allow_html=True)
     st.session_state.messages.append({"role": "user", "content": user_query})
     
     # KULLANICI FOTOĞRAF İSTİYORSA
-    if user_query.lower().startswith("/foto "):
-        with st.spinner("Eymen.AI görseli oluşturuyor..."):
-            prompt = user_query[6:] # '/foto ' kısmını ayır
+    if user_query.lower().startswith("foto oluştur,görsel,resim,hayal et,oluştur,çiz vb. "):
+        with st.spinner("V2 Medya Motoru Görseli Hazırlıyor..."):
+            prompt = user_query[6:] # 'foto ' kısmını ayır
             encoded_prompt = urllib.parse.quote(prompt)
-            # Ücretsiz ve anlık görsel oluşturma API'si
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}"
             ai_response = f"İşte istediğin görsel: {prompt}"
             
@@ -192,7 +191,7 @@ if user_query := st.chat_input("Eymen.AI'a bir mesaj yazın, '/foto' ile görsel
     # KULLANICI NORMAL SOHBET EDİYORSA
     else:
         if not api_key:
-            st.error("Lütfen Google Gemini API anahtarınızı Streamlit Secrets panelinde GEMINI_API_KEY olarak ayarlayın.")
+            st.error("Kotanızı doldurdunuz.Bu sorunu düzeltmek için biraz zamana ihtiyacımız var,lütfen yeni geliştirmeleri bekleyin.")
         else:
             try:
                 genai.configure(api_key=api_key)
@@ -209,7 +208,7 @@ if user_query := st.chat_input("Eymen.AI'a bir mesaj yazın, '/foto' ile görsel
                 
                 chat = model.start_chat(history=formatted_history)
                 
-                with st.spinner("Eymen.AI düşünüyor..."):
+                with st.spinner("Eymen AI V2 düşünüyor..."):
                     response = chat.send_message(user_query)
                     ai_response = response.text
                 
@@ -234,7 +233,7 @@ if user_query := st.chat_input("Eymen.AI'a bir mesaj yazın, '/foto' ile görsel
 st.write("---")
 st.markdown(
     "<p style='text-align: center; color: #475569; font-size: 0.85rem;'>"
-    "Eymen.AI © 2026 | Tüm Özellikler Aktif (Sıfır Hata)"
+    "Eymen AI V2 © 2026 | Tüm Özellikler Aktif"
     "</p>", 
     unsafe_allow_html=True
 )

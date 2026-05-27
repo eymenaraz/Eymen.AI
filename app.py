@@ -311,7 +311,8 @@ if user_query := st.chat_input("Mesajınızı yazın..."):
         # BU SATIRLARIN HEPSİ DE 4 BOŞLUK (BİR TAB) İÇERİDE OLMALI
         with st.spinner("Eymen AI V2 düşünüyor..."):
             # ... Gemini metin cevaplama kodların ...
-            st.session_state.messages.append({"role": "assistant", "content": ai_response}) st.rerun()
+            st.session_state.messages.append({"role": "assistant", "content": ai_response}) 
+            st.rerun()
         # ... gemini metin cevaplama kodun ...
         
     # 4. En son sayfayı yenile

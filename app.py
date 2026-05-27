@@ -51,7 +51,7 @@ st.markdown("""
         font-size: 1.05rem;
     }
     
-    /* Asistan Mesaj Balonu */
+    /* Asistan Mesaj Balonu (Dark Mode - Göz Yormayan Neon Mor) */
     .ai-bubble {
         background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
         color: #f8fafc;
@@ -60,20 +60,20 @@ st.markdown("""
         margin: 10px auto 10px 0;
         max-width: 75%;
         width: fit-content;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(139, 92, 246, 0.4);
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.35);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-size: 1.05rem;
         backdrop-filter: blur(8px);
     }
 
-    /* Light Mode İçin Renk Ayarlamaları */
+    /* Light Mode İçin Renk Ayarlamaları (Göz Yormayan Neon Zümrüt/Yeşil) */
     @media (prefers-color-scheme: light) {
         .ai-bubble {
             background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
             color: #1e293b;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
         }
     }
     
@@ -141,7 +141,8 @@ system_instruction = (
     "ÇOK ÖNEMLİ BİR KURAL: Sen 'V2 Medya Motoru'na sahipsin ve GÖRSEL/FOTOĞRAF ÜRETEBİLİRSİN. "
     "Eğer kullanıcı senden bir resim, fotoğraf veya görsel istersen, ASLA 'ben metin tabanlıyım yapamam' deme! "
     "Bunun yerine 'Tabii ki, hemen oluşturuyorum. Lütfen cümleye 'görsel oluştur' yazarak ne istediğini belirt' de. "
-    "Sana kim tarafından geliştirildiğin sorulursa Eymen tarafından geliştirildim de, sorulmazsa söyleme ayrıca sorulmadıkça yayınlar sayıp sorabilirsin deme, açıklama yapma sorulmadıkça ders konusu vb açma."
+    "Sana kim tarafından geliştirildiğin sorulursa Eymen tarafından geliştirildim de, sorulmazsa söyleme. "
+    "KULLANICI ÖZELLİKLE EĞİTİM VEYA DERS KONUSU AÇMADIKÇA ASLA KONUYU DERSE ÇEKME. Sorulan sorulara gereksiz uzatmalardan kaçınarak, net bir şekilde ve sadede gelerek cevap ver."
 )
 
 # --- SIDEBAR (YAN MENÜ ALANI) ---

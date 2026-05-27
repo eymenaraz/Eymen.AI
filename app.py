@@ -6,6 +6,7 @@ import random
 import string
 import math
 import google.generativeai as genai
+import streamlit.components.v1 as components
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
@@ -52,10 +53,9 @@ st.markdown("""
     
     /* Asistan Mesaj Balonu */
     .ai-bubble {
-        position: relative; /* İkonun sağ alta konumlanması için gerekli */
         background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
         color: #f8fafc;
-        padding: 16px 20px 35px 20px; /* Alttan ikon için ekstra boşluk */
+        padding: 16px 20px;
         border-radius: 20px 20px 20px 4px;
         margin: 10px auto 10px 0;
         max-width: 75%;
@@ -108,24 +108,6 @@ st.markdown("""
         font-weight: 500;
         margin-bottom: 30px;
     }
-    
-    /* Sesli Dinle İkonu (Sağ Alt Köşe Şeffaf İkon) */
-    .tts-icon {
-        position: absolute;
-        bottom: 8px;
-        right: 12px;
-        background: transparent;
-        color: #94a3b8;
-        border: none;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        padding: 0;
-    }
-    .tts-icon:hover {
-        transform: scale(1.15);
-        color: #38bdf8;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -155,10 +137,11 @@ st.markdown('<p class="subtitle">Premium Yapay Zeka & Akıllı Araç Seti</p>', 
 model_choice = "gemini-2.5-flash"
 system_instruction = (
     "Sen Eymen AI V2 adında, her dersten ve her sınıf seviyesinden tüm eğitim, mantık ve matematik problemlerini "
-    "jet hızında, kusursuz ve adım adım çözen uzman bir baş asistansın. Özellikle ulusal sınav hazırlıklarındaki "
-    "Sinan Kuzucu, Özdebir, Töder, 3D, Okyanus Master gibi en üst seviye zor ve nesnel yayınların soru kalıplarını, "
-    "deneme sınavı mantıklarını çok iyi bilirsin. Hangi ders veya yayın olursa olsun soruları pratik yollarla, "
-    "anlaşılır ve tam doğru şekilde analiz ederek açıklarsın. Sana kim tarafından geliştirildiğin sorulursa Eymen tarafından geliştirildim de, sorulmazsa söyleme ayrıca sorulmadıkça yayınlar sayıp sorabilirsin deme, açıklama yapma sorulmadıkça ders konusu vb açma."
+    "jet hızında, kusursuz ve adım adım çözen uzman bir baş asistansın. "
+    "ÇOK ÖNEMLİ BİR KURAL: Sen 'V2 Medya Motoru'na sahipsin ve GÖRSEL/FOTOĞRAF ÜRETEBİLİRSİN. "
+    "Eğer kullanıcı senden bir resim, fotoğraf veya görsel istersen, ASLA 'ben metin tabanlıyım yapamam' deme! "
+    "Bunun yerine 'Tabii ki, hemen oluşturuyorum. Lütfen cümleye 'görsel oluştur' yazarak ne istediğini belirt' de. "
+    "Sana kim tarafından geliştirildiğin sorulursa Eymen tarafından geliştirildim de, sorulmazsa söyleme ayrıca sorulmadıkça yayınlar sayıp sorabilirsin deme, açıklama yapma sorulmadıkça ders konusu vb açma."
 )
 
 # --- SIDEBAR (YAN MENÜ ALANI) ---
@@ -177,23 +160,22 @@ with st.sidebar:
     # 2. AKILLI ARAÇ KUTUSU SEKMESİ
     st.markdown("<h3 style='color: #64748b;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
     
-    # --- YENİ SÜRPRİZ ÖZELLİK: QR KOD OLUŞTURUCU ---
-    with st.expander("🪄 Sürpriz: Hızlı QR Kod Üretici"):
-        qr_data = st.text_input("QR Koda çevrilecek yazı veya link:")
-        if st.button("QR Kod Oluştur", use_container_width=True):
-            if qr_data:
-                encoded_qr = urllib.parse.quote(qr_data)
-                qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={encoded_qr}"
-                st.image(qr_url, caption="İşte QR Kodun! İndirebilir veya taratabilirsin.")
-            else:
-                st.warning("Lütfen bir metin girin.")
+    # YENİ SÜRPRİZ ÖZELLİK: METİN ANALİZ ARACI
+    with st.expander("📊 Sürpriz: Metin & Kelime Analizcisi"):
+        st.caption("Uzun metinlerinizi yapıştırıp kaç karakter/kelime olduğunu hemen öğrenin.")
+        analiz_metni = st.text_area("Analiz edilecek metin:")
+        if analiz_metni:
+            kelime = len(analiz_metni.split())
+            karakter = len(analiz_metni)
+            st.success(f"📝 Kelime Sayısı: {kelime} | 🔤 Karakter Sayısı: {karakter}")
 
     # GELİŞMİŞ HESAP MAKİNESİ
     with st.expander("🧮 Gelişmiş Hesap Makinesi"):
         if "calc_val" not in st.session_state:
             st.session_state.calc_val = ""
             
-        st.text_input("Ekran", value=st.session_state.calc_val, disabled=True, key="calc_screen")
+        # Klavyeden giriş yapılabilmesi için revize edildi
+        st.session_state.calc_val = st.text_input("Ekran (Klavyeden yazabilirsiniz)", value=st.session_state.calc_val)
         
         col1, col2, col3, col4 = st.columns(4)
         if col1.button("7"): st.session_state.calc_val += "7"
@@ -238,47 +220,16 @@ with st.sidebar:
                 st.session_state.calc_val = "Hata"
             st.rerun()
 
-    # AKILLI ŞİFRE OLUŞTURUCU
-    with st.expander("🔑 Akıllı Şifre Oluşturucu"):
-        length = st.slider("Hane Sayısı (Uzunluk)", min_value=4, max_value=32, value=12)
-        use_digits = st.checkbox("Sayılar Olsun (0-9)", value=True)
-        use_special = st.checkbox("Semboller Olsun (!@#$)", value=True)
-        
-        if st.button("Şifre Üret", use_container_width=True):
-            chars = string.ascii_letters
-            if use_digits: chars += string.digits
-            if use_special: chars += string.punctuation
-            generated_password = "".join(random.choice(chars) for _ in range(length))
-            st.code(generated_password, language="")
 
 # --- EKRANA MESAJLARI YAZDIRMA FONKSİYONU ---
 def render_message(msg):
     if msg["role"] == "user":
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
-        # Güvenli sesli okuma için metni temizle
-        safe_text = msg["content"].replace("'", "\\'").replace('"', '\\"').replace('\n', ' ')
-        
-        # Sesi oynatacak ikon HTML'i (Erkek/Tok ses için pitch ayarı düşürüldü)
-        tts_icon_html = f"""
-        <button class="tts-icon" title="Sesli Dinle" onclick="
-            if('speechSynthesis' in window) {{
-                window.speechSynthesis.cancel();
-                var m = new SpeechSynthesisUtterance('{safe_text}');
-                m.lang = 'tr-TR';
-                m.pitch = 0.7; /* Erkek/tok ses hissiyatı için tonlama düşürüldü */
-                m.rate = 1.0;
-                window.speechSynthesis.speak(m);
-            }} else {{
-                alert('Tarayıcınız sesli okumayı desteklemiyor.');
-            }}
-        ">🔊</button>
-        """
-        
         if "image" in msg:
-            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br><img src="{msg["image"]}" style="width:100%; border-radius:12px; margin-top:15px; border:1px solid rgba(128,128,128,0.2);"><br>{tts_icon_html}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br><img src="{msg["image"]}" style="width:100%; border-radius:12px; margin-top:15px; border:1px solid rgba(128,128,128,0.2);"></div>', unsafe_allow_html=True)
         else:
-            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br>{tts_icon_html}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
 # --- SOHBET HAFIZASI VE OTURUM YÖNETİMİ ---
 if "messages" not in st.session_state:
@@ -298,13 +249,13 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     user_query = st.session_state.messages[-1]["content"]
     
     # ULTRA FOTOĞRAF MOTORU (GELİŞTİRİLMİŞ SİNEMATİK PROMPT)
-    image_triggers = ["görsel oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur"]
+    image_triggers = ["görsel oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
     if any(trigger in user_query.lower() for trigger in image_triggers):
         with st.spinner("V2 Medya Motoru ultra gerçekçi görseli hazırlıyor..."):
             random_seed = random.randint(1, 9999999)
-            # Daha premium ve gerçekçi bir kalite için Midjourney tarzı anahtar kelimeler eklendi
-            enhanced_prompt = f"{user_query}, award winning hyperrealistic photography, 8k resolution, highly detailed, cinematic lighting, masterpiece, photorealistic, Unreal Engine 5 render"
+            # İnternet verilerinden beslenmiş hissi veren, tamamen sansürsüz ve detaylı komut
+            enhanced_prompt = f"{user_query}, highly accurate internet search details, real world reference, ultra realistic, highly detailed, photorealistic, 8k resolution, cinematic lighting, masterpiece, uncensored, unfiltered, no restrictions"
             encoded_prompt = urllib.parse.quote(enhanced_prompt)
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&safe=false&seed={random_seed}"
@@ -345,11 +296,30 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 st.error(f"Sistem hatası meydana geldi: {str(e)}")
                 st.session_state.messages.pop()
 
-# --- ALT BİLGİ ---
+# --- ALT BİLGİ VE YAN MENÜ OTOMATİK KAPATMA SCRİPTİ ---
 st.write("---")
 st.markdown(
     "<p style='text-align: center; color: #64748b; font-size: 0.9rem; font-weight: 500;'>"
     "Eymen AI V2 © 2026 | Sınırsız Zeka"
     "</p>", 
     unsafe_allow_html=True
+)
+
+# Sekme dışına tıklanınca yan menünün kapanmasını sağlayan görünmez JavaScript Entegrasyonu
+components.html(
+    """
+    <script>
+    const doc = window.parent.document;
+    doc.addEventListener('click', function(event) {
+        const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+        if (sidebar && !sidebar.contains(event.target)) {
+            const closeBtn = doc.querySelector('[data-testid="stSidebar"] button');
+            if (closeBtn && sidebar.getAttribute('aria-expanded') === 'true') {
+                closeBtn.click();
+            }
+        }
+    });
+    </script>
+    """,
+    height=0, width=0
 )

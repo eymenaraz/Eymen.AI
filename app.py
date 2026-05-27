@@ -9,19 +9,24 @@ import google.generativeai as genai
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eymen AI V2,"
+    page_title="Eymen AI V2 - Premium",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- CSS VE STYLING (ÖZEL NEON LOGO VE PREMIUM TEMALAR) ---
+# --- CSS VE STYLING (ÖZEL NEON LOGO & IPHONE MOBİL DÜZELTMESİ) ---
 st.markdown("""
 <style>
     /* Ana Arka Plan */
     .stApp {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         color: #f8fafc;
+    }
+    
+    /* IPHONE VE MOBİL GİRİŞ DÜZELTMESİ (Auto-Zoom Engelleme) */
+    [data-testid="stChatInput"] textarea, .stTextInput input, textarea {
+        font-size: 16px !important;
     }
     
     /* Yan Menü (Sidebar) */
@@ -105,7 +110,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- ÇOKLU API KEY OTOMATİK TARAMA SİSTEMİ ---
-# Secrets panelindeki KEY_1'den KEY_10'a kadar olan anahtarları sırayla test eder
 @st.cache_resource
 def get_working_api_key():
     for i in range(1, 11):
@@ -113,7 +117,6 @@ def get_working_api_key():
         if key_name in st.secrets:
             potential_key = st.secrets[key_name]
             try:
-                # Anahtarın çalışıp çalışmadığını test etmek için minik bir çağrı yapıyoruz
                 genai.configure(api_key=potential_key)
                 model = genai.GenerativeModel("gemini-2.5-flash")
                 model.generate_content("test", generation_config={"max_output_tokens": 1})
@@ -128,9 +131,15 @@ api_key = get_working_api_key()
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eymen AI</span><span class="brand-v2">V2</span></div>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Gelişmiş Yapay Zeka & Akıllı Araç Seti</p>', unsafe_allow_html=True)
 
-# --- ARKA PLAN SABİT AYARLAR ---
+# --- MODEL VE SİSTEM TALİMATI AYARLARI ---
 model_choice = "gemini-2.5-flash"
-system_instruction = "Sen Eymen AI V2 adında, kullanıcılara her konuda yardımcı olan, profesyonel, zeki ve bilgili bir yapay zeka asistanısın.Her türlü problemi her türlü sınıf derecesinden her dersten her problemi şak diye doğru çözer ve hızlıca açıklar hızlıca doğru çözersin Einstein gibi matematik dehasısın.Görsel oluştururken de prompttaki istemi internette aratıp kend teknolojinle harmanlayarak görseli çok hızlıca doğru şekilde istemler üstüste gelse bile oluşturursun."
+system_instruction = (
+    "Sen Eymen AI V2 adında, her dersten ve her sınıf seviyesinden tüm eğitim, mantık ve matematik problemlerini "
+    "jet hızında, kusursuz ve adım adım çözen uzman bir baş asistansın. Özellikle ulusal sınav hazırlıklarındaki "
+    "Sinan Kuzucu, Özdebir, Töder, 3D, Okyanus Master gibi en üst seviye zor ve nesnel yayınların soru kalıplarını, "
+    "deneme sınavı mantıklarını çok iyi bilirsin. Hangi ders veya yayın olursa olsun soruları pratik yollarla, "
+    "anlaşılır ve tam doğru şekilde analiz ederek açıklarsın."
+)
 
 # --- SIDEBAR (YAN MENÜ ALANI) ---
 with st.sidebar:
@@ -189,7 +198,6 @@ with st.sidebar:
             
         st.text_input("Ekran", value=st.session_state.calc_val, disabled=True, key="calc_screen")
         
-        # Buton Düzenleri
         col1, col2, col3, col4 = st.columns(4)
         if col1.button("7"): st.session_state.calc_val += "7"
         if col2.button("8"): st.session_state.calc_val += "8"
@@ -213,7 +221,6 @@ with st.sidebar:
             st.session_state.calc_val = ""
             st.rerun()
             
-        # Özel Fonksiyonlar (Karekök ve Üs)
         c_sqrt, c_sqr, c_eq = st.columns([1, 1, 2])
         if c_sqrt.button("√x"):
             try:
@@ -266,22 +273,22 @@ if user_query := st.chat_input("Eymen AI V2'ye birşeyler sorun..."):
     st.markdown(f'<div class="user-bubble">{user_query}</div>', unsafe_allow_html=True)
     st.session_state.messages.append({"role": "user", "content": user_query})
     
-    # GELİŞTİRİLMİŞ ULTRA GÖRSEL ÜRETİM MOTORU
+    # ULTRA FOTOĞRAF MOTORU (TÜM FİLTRELER ARKA PLANDA KALDIRILDI)
     if user_query.lower().startswith("/foto "):
-        with st.spinner("V2 Medya Motoru Görseli Hazırlıyor..."):
+        with st.spinner("V2 Medya Motoru görseli oluşturuyor..."):
             prompt = user_query[6:]
             encoded_prompt = urllib.parse.quote(prompt)
-            # Gelişmiş görsel parametreleri ile beslenen yüksek kaliteli motor bağlantısı
-            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
+            # Güvenlik politikaları tamamen dış kaynaktan yönetilen kısıtlamasız motor linki
+            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&safe=false"
             ai_response = f"✨ İstediğin özel görsel başarıyla üretildi: **{prompt}**"
             
             st.markdown(f'<div class="ai-bubble">{ai_response}<br><img src="{image_url}" style="width:100%; border-radius:10px; margin-top:10px; border:1px solid #334155;"></div>', unsafe_allow_html=True)
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             
-    # NORMAL YAPAY ZEKA SOHBETİ
+    # GÜÇLENDİRİLMİŞ GEMINI 2.5 FLASH ZEKA MOTORU
     else:
         if not api_key:
-            st.error("Kotanızı doldurdunuz.Bu sorunu düzeltmek için biraz zamana ihtiyacımız var,lütfen yeni geliştirmeleri bekleyin.")
+            st.error("Kotanızı doldurdunuz.Bu sorunu çözmek için biraz zamana ihtiyacımız var,lütfen yeni geliştirmeleri bekleyin.")
         else:
             try:
                 genai.configure(api_key=api_key)
@@ -305,13 +312,17 @@ if user_query := st.chat_input("Eymen AI V2'ye birşeyler sorun..."):
                 st.markdown(f'<div class="ai-bubble">{ai_response}</div>', unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": ai_response})
                 
-                # --- YEREL SESLİ OKUMA (TTS) ---
+                # --- YEREL SESLİ OKUMA (TTS) ALTYAPISI ---
                 escaped_response = json.dumps(ai_response)
                 tts_html = f"""
                 <script>
-                var msg = new SpeechSynthesisUtterance({escaped_response});
-                msg.lang = 'tr-TR';
-                window.speechSynthesis.speak(msg);
+                try {{
+                    window.speechSynthesis.cancel(); // Önceki sesleri temizle
+                    var msg = new SpeechSynthesisUtterance({escaped_response});
+                    msg.lang = 'tr-TR';
+                    msg.rate = 1.0;
+                    window.speechSynthesis.speak(msg);
+                }} catch(err) {{ console.log(err); }}
                 </script>
                 """
                 st.markdown(tts_html, unsafe_allow_html=True)
@@ -323,7 +334,7 @@ if user_query := st.chat_input("Eymen AI V2'ye birşeyler sorun..."):
 st.write("---")
 st.markdown(
     "<p style='text-align: center; color: #475569; font-size: 0.85rem;'>"
-    "Eymen AI V2 © 2026 | Güçlendirilmiş Nihai Sürüm"
+    "Eymen AI V2 © 2026 |"
     "</p>", 
     unsafe_allow_html=True
 )

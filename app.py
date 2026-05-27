@@ -300,9 +300,18 @@ if user_query := st.chat_input("Mesajınızı yazın..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
     
     # 3. ŞİMDİ bu satırı buraya, bloğun içine koy
+    # 303. satırın burası:
     if any(trigger in user_query.lower() for trigger in image_triggers):
+        # BU SATIRLARIN HEPSİ 4 BOŞLUK (BİR TAB) İÇERİDE OLMALI
+        with st.spinner("V2 Medya Motoru Görseli Hazırlıyor..."):
+            # ... görsel oluşturma kodların ...
+            st.session_state.messages.append({"role": "assistant", "content": "Görsel hazır!", "image": image_url})
         # ... görsel oluşturma kodun ...
     else:
+        # BU SATIRLARIN HEPSİ DE 4 BOŞLUK (BİR TAB) İÇERİDE OLMALI
+        with st.spinner("Eymen AI V2 düşünüyor..."):
+            # ... Gemini metin cevaplama kodların ...
+            st.session_state.messages.append({"role": "assistant", "content": ai_response})st.rerun()
         # ... gemini metin cevaplama kodun ...
         
     # 4. En son sayfayı yenile

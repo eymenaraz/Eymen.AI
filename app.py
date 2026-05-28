@@ -59,7 +59,7 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
             aktif_key = st.secrets[key_adı]
             try:
                 genai.configure(api_key=aktif_key)
-                model = genai.GenerativeModel(model_name="gemini-3.1-flash", system_instruction=sistem_talimati)
+                model = genai.GenerativeModel(model_name="gemini-2.5-flash", system_instruction=sistem_talimati)
                 
                 if geçmiş is not None:
                     chat = model.start_chat(history=geçmiş)
@@ -179,7 +179,7 @@ with st.sidebar:
                 st.session_state.messages.append({"role": "user", "content": sistem_istemi})
                 st.rerun()
 
-    with st.expander("🎲 Karar Çarkı":
+    with st.expander("🎲 Karar Çarkı (Sürpriz Özellik)"):
         secenekler = st.text_input("Kararsız mı kaldın? Seçenekleri virgülle yaz (Örn: LGS denemesi çöz, Küp pratiği yap, Lol oyna):")
         if st.button("Benim İçin Seç!", use_container_width=True):
             liste = [s.strip() for s in secenekler.split(",") if s.strip()]
@@ -232,7 +232,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             try:
-                # Buradaki Syntax hatasına yol açan bozuk satır tamir edildi.
                 cleaned_json = ai_json_response.replace("```json", "").replace("```", "").strip()
                 data = json.loads(cleaned_json)
                 is_new = data.get("is_new_subject", True)

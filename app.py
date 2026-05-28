@@ -132,7 +132,7 @@ st.markdown("""
         transition: none !important;
     }
 
-    /* V2 MEDYA MOTORU 3 NOKTA ANİMASYONU */
+    /* 3 NOKTA YÜKLEME ANİMASYONU CSS */
     .typing-dots {
         display: inline-flex;
         align-items: center;
@@ -141,9 +141,9 @@ st.markdown("""
     .dot {
         width: 8px;
         height: 8px;
-        background-color: #2563eb; /* Kullanıcı balonu mavisi */
+        background-color: white; /* Balon mavi, noktalar beyaz */
         border-radius: 50%;
-        margin: 0 3px;
+        margin: 0 2px;
         animation: bounce 1.4s infinite ease-in-out both;
     }
     .dot:nth-child(1) { animation-delay: -0.32s; }
@@ -294,7 +294,8 @@ def render_message(msg):
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         if "image" in msg:
-            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br><img src="{msg["image"]}" style="width:100%; border-radius:12px; margin-top:15px; border:1px solid rgba(128,128,128,0.2);"></div>', unsafe_allow_html=True)
+            # Görünürlüğü garanti altına almak için imaj stili güncellendi
+            st.markdown(f'<div class="ai-bubble">{msg["content"]}<br><img src="{msg["image"]}" style="width:100% !important; max-width:1024px; border-radius:12px; margin-top:15px; border:1px solid rgba(128,128,128,0.2); display: block;"></div>', unsafe_allow_html=True)
         else:
             st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
@@ -316,23 +317,28 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     image_triggers = ["görsel oluştur", "resmi oluştur", "oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
     if any(trigger in user_query.lower() for trigger in image_triggers):
-        # 3 Noktalı Özel Animasyon Entegrasyonu
+        # YENİ: Mavi Baloncuk Stilli 3 Nokta Sekmeli Animasyon
         with st.spinner(""):
+            # UI'ın anlık güncellenmesi için render_message döngüsü dışında geçici mavi balon
             st.markdown(
-                '<div style="display: flex; align-items: center; font-weight: bold; color: #64748b; padding: 10px;">'
-                'V2 Medya Motoru Görseli Hazırlıyor...'
-                '<div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>'
-                '</div>', unsafe_allow_html=True
+                f'<div class="user-bubble" style="margin-bottom: 20px; display: flex; align-items: center;">'
+                f'V2 Medya Motoru Görseli Hazırlıyor...'
+                f'<div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>'
+                f'</div>', 
+                unsafe_allow_html=True
             )
             
             random_seed = random.randint(1, 9999999)
             
-            # Tüm filtreler ve kısıtlamalar kaldırıldı, sadece kullanıcının girdiği metin baz alınıyor
+            # filtreler kaldırıldı, sadece kullanıcının girdiği metin baz alınıyor
             encoded_prompt = urllib.parse.quote(user_query)
             
+            # API URL OLUŞTURULDU (Burada görsel zaten üretiliyor)
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={random_seed}"
+            
             ai_response = f"✨ İstediğin görsel başarıyla üretildi!"
             
+            # Mesajı kaydet ve rerun yap (Bu rerun sonrası yukarıdaki render_message görseli basacak)
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             st.rerun()
             

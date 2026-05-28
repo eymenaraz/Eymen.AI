@@ -70,9 +70,13 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
                 try: return yanit.text, True
                 except ValueError: return "Sistem uyarısı: Oluşturulan içerik boş döndü.", False
             except Exception as e:
-                if "429" in str(e) or "Quota" in str(e): continue 
-                else: return f"Hata: {str(e)}", False
-    return "API Kotaları dolu.", False
+                err_str = str(e)
+                # Süresi dolan ve geçersiz key'leri de atlama döngüsüne dahil ettik
+                if "429" in err_str or "Quota" in err_str or "400" in err_str or "expired" in err_str or "API_KEY_INVALID" in err_str: 
+                    continue 
+                else: 
+                    return f"Hata: {err_str}", False
+    return "API Kotaları dolu veya tüm anahtarlar geçersiz/süresi dolmuş.", False
 
 # --- SIDEBAR KONTROL PANELİ ---
 with st.sidebar:
@@ -163,6 +167,28 @@ with st.sidebar:
         c4.button("C", on_click=clear_calc, key="b_c")
         st.button("=", use_container_width=True, on_click=eval_calc, key="b_eq")
 
+    with st.expander("📝 Sınav Soru Hazırlayıcısı"):
+        sinav_tipi = st.selectbox("Sınav Türü:", ["LGS", "YKS (TYT/AYT)", "KPSS", "ALES", "DGS"])
+        ders_tipi = st.text_input("Ders/Konu (Örn: Matematik Çarpanlar):")
+        if st.button("Soruyu Üret ve Çöz", use_container_width=True):
+            if ders_tipi:
+                yeni_sohbet_adi = f"{sinav_tipi} - {ders_tipi[:10]}"
+                st.session_state.chats[yeni_sohbet_adi] = []
+                st.session_state.current_chat = yeni_sohbet_adi
+                st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
+                sistem_istemi = f"Bana {sinav_tipi} müfredatına ve MEB/ÖSYM yeni nesil çıkmış soru tarzına tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), şıklarını (A, B, C, D, E), doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt."
+                st.session_state.messages.append({"role": "user", "content": sistem_istemi})
+                st.rerun()
+
+    with st.expander("🎲 Karar Çarkı"):
+        secenekler = st.text_input("Kararsız mı kaldın? Seçenekleri virgülle yaz (Örn: LGS denemesi çöz, Küp pratiği yap, Lol oyna):")
+        if st.button("Benim İçin Seç!", use_container_width=True):
+            liste = [s.strip() for s in secenekler.split(",") if s.strip()]
+            if liste: 
+                st.success(f"🎯 Sistem Seçti: **{random.choice(liste)}**")
+            else: 
+                st.warning("Lütfen virgülle ayırarak seçenek girin.")
+
 # --- MESAJLARI GÖSTERME ---
 for msg in st.session_state.messages:
     if msg["role"] == "user": st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -197,9 +223,9 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             prompt_instruction = (
                 "Sen uzman bir AI Prompt mühendisisin. Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
                 "KURALLAR:\n"
-                "1. Kullanıcı tamamen yeni ve alakasız bir resim istiyorsa 'is_new_subject': true yap.\n"
+                "1. Kullanıcı tamamen yeni bir resim istiyorsa 'is_new_subject': true yap.\n"
                 "2. Kullanıcı önceki resmi değiştirmek istiyorsa 'is_new_subject': false yap. Eski resmin ana konusunu kaybetmeden yeni isteği ekleyerek İNGİLİZCE tek bir prompt oluştur.\n"
-                "3. Kullanıcının istediği tarzı (anime, pixel art, meme, absürt, çizim vb.) KESİNLİKLE KORU. Hiçbir filtre, sansür veya 'photorealistic' gibi zorunlu eklemeler YAPMA.\n"
+                "3. Kullanıcının istediği tarzı KESİNLİKLE KORU. İstenen metnin konusunu BİREBİR kopyala, alakasız şeyler üretme, sadece İngilizceye çevir.\n"
                 "4. Kullanıcı 'arkaplanı kaldır/sil' diyorsa şeffaf yapmak imkansızdır, bu yüzden prompta 'isolated on a pure solid white background' ekle.\n"
                 "5. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A low quality 144p brainrot meme image\"}"
             )
@@ -207,16 +233,17 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             try:
-                cleaned_json = ai_json_response.replace("```json", "").replace("```", "").strip()
+                cleaned_json = ai_json_response.replace("```json", "").replace("
+```", "").strip()
                 data = json.loads(cleaned_json)
                 is_new = data.get("is_new_subject", True)
                 enhanced_prompt = data.get("prompt", "a random image")
             except Exception:
                 is_new = True
-                enhanced_prompt = user_query # Hata olursa direkt kullanıcının yazdığını geçir
+                enhanced_prompt = user_query 
             
-            if is_new:
-                st.session_state.image_seed = random.randint(1, 99999999)
+            # Art arda aynı istemi gönderdiğinde kopyası/yeni hali gelsin diye her seferinde seed'i yeniliyoruz (önbelleği kırmak için)
+            st.session_state.image_seed = random.randint(1, 99999999)
             
             # FİLTRELER VE EKLEMELER KALDIRILDI - SADECE SAF İSTEM (PROMPT) GİDECEK
             master_prompt = enhanced_prompt

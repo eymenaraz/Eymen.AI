@@ -198,9 +198,10 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 "Sen uzman bir AI Prompt mühendisisin. Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
                 "KURALLAR:\n"
                 "1. Kullanıcı tamamen yeni ve alakasız bir resim istiyorsa 'is_new_subject': true yap.\n"
-                "2. Kullanıcı önceki resmi değiştirmek istiyorsa (ör: 'kırmızı yap', 'arkaplanı siyah yap', 'yanına kedi koy') 'is_new_subject': false yap. Eski resmin ana konusunu kaybetmeden yeni isteği ekleyerek İngilizce tek bir tam cümle (prompt) oluştur.\n"
-                "3. Kullanıcı 'arkaplanı kaldır/sil' diyorsa şeffaf yapmak imkansızdır, bu yüzden prompta 'isolated on a pure solid white background' ekle.\n"
-                "4. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": false, \"prompt\": \"A red sports car isolated on a pure solid black background, highly detailed\"}"
+                "2. Kullanıcı önceki resmi değiştirmek istiyorsa 'is_new_subject': false yap. Eski resmin ana konusunu kaybetmeden yeni isteği ekleyerek İNGİLİZCE tek bir prompt oluştur.\n"
+                "3. Kullanıcının istediği tarzı (anime, pixel art, meme, absürt, çizim vb.) KESİNLİKLE KORU. Hiçbir filtre, sansür veya 'photorealistic' gibi zorunlu eklemeler YAPMA.\n"
+                "4. Kullanıcı 'arkaplanı kaldır/sil' diyorsa şeffaf yapmak imkansızdır, bu yüzden prompta 'isolated on a pure solid white background' ekle.\n"
+                "5. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A low quality 144p brainrot meme image\"}"
             )
             
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
@@ -209,20 +210,21 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 cleaned_json = ai_json_response.replace("```json", "").replace("```", "").strip()
                 data = json.loads(cleaned_json)
                 is_new = data.get("is_new_subject", True)
-                enhanced_prompt = data.get("prompt", "highly detailed photorealistic scene")
+                enhanced_prompt = data.get("prompt", "a random image")
             except Exception:
                 is_new = True
-                enhanced_prompt = "highly detailed photorealistic scene"
+                enhanced_prompt = user_query # Hata olursa direkt kullanıcının yazdığını geçir
             
             if is_new:
                 st.session_state.image_seed = random.randint(1, 99999999)
             
-            master_prompt = f"{enhanced_prompt}, photorealistic, ultra-realistic, 8k resolution, raw camera footage"
+            # FİLTRELER VE EKLEMELER KALDIRILDI - SADECE SAF İSTEM (PROMPT) GİDECEK
+            master_prompt = enhanced_prompt
             encoded_prompt = urllib.parse.quote(master_prompt)
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
             
-            ai_response = f"✨ Görsel hazır! *(Motor: {st.session_state.aktif_motor.upper()} | Mod: {'Yeni' if is_new else 'Düzenleme'})*"
+            ai_response = f"✨ Görsel hazır! *(Motor: {st.session_state.aktif_motor.upper()} | Mod: {'Yeni' if is_new else 'Düzenleme'} | Filtreler: Kapalı)*"
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             st.rerun() 
             

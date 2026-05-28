@@ -53,9 +53,13 @@ uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", help="Sadec
 
 # --- DİNAMİK GEMINI ÇAĞIRICI ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
+    son_hata = "Lütfen Streamlit ayarlarında (secrets) API key eklediğinden emin ol."
+    anahtar_bulundu = False
+    
     for i in range(1, 11):
         key_adı = f"KEY_{i}"
         if key_adı in st.secrets:
+            anahtar_bulundu = True
             aktif_key = st.secrets[key_adı]
             try:
                 genai.configure(api_key=aktif_key)
@@ -71,11 +75,16 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
                 except ValueError: return "Sistem uyarısı: Oluşturulan içerik boş döndü.", False
             except Exception as e:
                 err_str = str(e)
-                if "429" in err_str or "Quota" in err_str or "400" in err_str or "expired" in err_str or "API_KEY_INVALID" in err_str: 
+                son_hata = err_str
+                if any(k in err_str for k in ["429", "Quota", "400", "expired", "API_KEY_INVALID"]): 
                     continue 
                 else: 
                     return f"Hata: {err_str}", False
-    return "API Kotaları dolu veya tüm anahtarlar geçersiz/süresi dolmuş.", False
+                    
+    if not anahtar_bulundu:
+        return son_hata, False
+        
+    return f"Bağlantı başarısız. Google'dan gelen son hata mesajı: {son_hata}", False
 
 # --- SIDEBAR KONTROL PANELİ ---
 with st.sidebar:
@@ -175,7 +184,7 @@ with st.sidebar:
                 st.session_state.chats[yeni_sohbet_adi] = []
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
-                sistem_istemi = f"Bana {sinav_tipi} müfredatına ve MEB/ÖSYM yeni nesil çıkmış soru tarzına tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), şıklarını (A, B, C, D, E), doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt."
+                sistem_istemi = f"Bana {sinav_tipi} müfredatına ve MEB/ÖSYM yeni nesil çıkmış soru tarzına tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), şıklarını (A, B, C, D), doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt."
                 st.session_state.messages.append({"role": "user", "content": sistem_istemi})
                 st.rerun()
 

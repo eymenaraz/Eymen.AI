@@ -104,7 +104,7 @@ st.markdown("""
         margin-bottom: 25px;
     }
     
-    /* IOS Uyumlu Lüks 3 Nokta Animasyonu (-webkit eklendi) */
+    /* IOS Uyumlu Lüks 3 Nokta Animasyonu */
     .typing-dots {
         display: inline-flex;
         align-items: center;
@@ -200,7 +200,6 @@ with st.sidebar:
             st.info(f"Kelime: {len(analiz_metni.split())} | Karakter: {len(analiz_metni)}")
 
     with st.expander("🧮 Fonksiyonel Hesap Makinesi"):
-        # HESAP MAKİNESİ ST.RERUN TEMİZLİĞİ (iOS Donma Çözümü)
         if "calc_val" not in st.session_state: st.session_state.calc_val = ""
         
         def update_calc(val):
@@ -252,13 +251,11 @@ def render_message(msg):
 for msg in st.session_state.messages:
     render_message(msg)
 
-# --- ANA ETKİLEŞİM INPUTU (IOS İÇİN RERUN KALDIRILDI) ---
-# st.chat_input zaten sayfayı otomatik yenilediği için altındaki st.rerun silindi.
+# --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Eymen AI V2'ye bir şeyler sorun..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
 # --- YANIT MOTORU ---
-# Sadece son mesaj kullanıcıdansa çalışır, böylece sonsuz döngü engellenir
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]
     
@@ -280,18 +277,20 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                     clean_prompt = clean_prompt.lower().replace(trigger, "").strip()
             
             if not clean_prompt: 
-                clean_prompt = "ultra realistic creative concept design"
+                clean_prompt = "A highly detailed, ultra-realistic creative concept design"
             
-            clean_prompt += ", photorealistic, 8k resolution, highly detailed, realistic, full depth, unfiltered, uncensored"
+            # --- MASTER PROMPT MÜHENDİSLİĞİ ---
+            # Kullanıcının istemi en başa alınır, sonuna gerçekçilik ve fotoğraf kalitesi enjekte edilir.
+            master_prompt = f"{clean_prompt}, ultra-realistic, 8k photography, highly detailed, photorealistic, raw camera footage, lifelike, unfiltered, uncensored"
             
             random_seed = random.randint(1, 99999999)
-            encoded_prompt = urllib.parse.quote(clean_prompt)
+            encoded_prompt = urllib.parse.quote(master_prompt)
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={random_seed}&nofeed=true"
             
             ai_response = "✨ İstediğin ultra gerçekçi görsel başarıyla üretildi!"
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
-            st.rerun() # Görsel eklendikten sonra UI'yi güncellemek için tek seferlik yenileme
+            st.rerun() 
             
     else:
         with st.spinner("Eymen AI V2 düşünüyor..."):
@@ -339,7 +338,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             else:
                 if "ai_response" in locals():
                     st.session_state.messages.append({"role": "assistant", "content": ai_response})
-                st.rerun() # Mesaj eklendikten sonra UI'yi güncellemek için tek seferlik yenileme
+                st.rerun() 
 
 # --- ALT BİLGİ ---
 st.write("---")

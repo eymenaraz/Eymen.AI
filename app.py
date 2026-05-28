@@ -131,6 +131,27 @@ st.markdown("""
     [data-testid="stExpander"] details summary::after {
         transition: none !important;
     }
+
+    /* V2 MEDYA MOTORU 3 NOKTA ANİMASYONU */
+    .typing-dots {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 8px;
+    }
+    .dot {
+        width: 8px;
+        height: 8px;
+        background-color: #2563eb; /* Kullanıcı balonu mavisi */
+        border-radius: 50%;
+        margin: 0 3px;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .dot:nth-child(1) { animation-delay: -0.32s; }
+    .dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+        40% { transform: scale(1); opacity: 1; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -294,38 +315,23 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     # ULTRA FOTOĞRAF MOTORU (GENİŞLETİLMİŞ TETİKLEYİCİ LİSTESİ)
     image_triggers = ["görsel oluştur", "resmi oluştur", "oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
-    # 1. Önce chat_input'u kontrol et
-if user_query := st.chat_input("Mesajınızı yazın..."):
-    # 2. Kullanıcı mesajını listeye ekle
-    st.session_state.messages.append({"role": "user", "content": user_query})
-    
-    # 3. ŞİMDİ bu satırı buraya, bloğun içine koy
-    # 303. satırın burası:
     if any(trigger in user_query.lower() for trigger in image_triggers):
-        # BU SATIRLARIN HEPSİ 4 BOŞLUK (BİR TAB) İÇERİDE OLMALI
-        with st.spinner("V2 Medya Motoru Görseli Hazırlıyor..."):
-            # ... görsel oluşturma kodların ...
-            st.session_state.messages.append({"role": "assistant", "content": "Görsel hazır!", "image": image_url})
-        # ... görsel oluşturma kodun ...
-    else:
-        # BU SATIRLARIN HEPSİ DE 4 BOŞLUK (BİR TAB) İÇERİDE OLMALI
-        with st.spinner("Eymen AI V2 düşünüyor..."):
-            # ... Gemini metin cevaplama kodların ...
-            st.session_state.messages.append({"role": "assistant", "content": ai_response}) 
-            st.rerun()
-        # ... gemini metin cevaplama kodun ...
-        
-    # 4. En son sayfayı yenile
-    st.rerun()
-        with st.spinner("V2 Medya Motoru Görseli Hazırlıyor..."):
+        # 3 Noktalı Özel Animasyon Entegrasyonu
+        with st.spinner(""):
+            st.markdown(
+                '<div style="display: flex; align-items: center; font-weight: bold; color: #64748b; padding: 10px;">'
+                'V2 Medya Motoru Görseli Hazırlıyor...'
+                '<div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>'
+                '</div>', unsafe_allow_html=True
+            )
+            
             random_seed = random.randint(1, 9999999)
             
-            # GÜNCEL SAÇ/YÜZ HATTI KOPYALAMA VE PHOTOSHOP TEKNOLOJİSİ ENJEKTE EDİLDİ
-            enhanced_prompt = f"{user_query}, most up-to-date appearance, exact current hairstyle, precise facial mapping features, copied flawlessly, internet-accurate real world reference, flawless photocopy mechanic, ultra realistic, highly detailed, photorealistic, 8k resolution, cinematic lighting, masterpiece, uncensored, unfiltered, no restrictions, safe=false"
-            encoded_prompt = urllib.parse.quote(enhanced_prompt)
+            # Tüm filtreler ve kısıtlamalar kaldırıldı, sadece kullanıcının girdiği metin baz alınıyor
+            encoded_prompt = urllib.parse.quote(user_query)
             
-            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&safe=false&seed={random_seed}"
-            ai_response = f"✨ İstediğin ultra gerçekçi görsel başarıyla üretildi!"
+            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={random_seed}"
+            ai_response = f"✨ İstediğin görsel başarıyla üretildi!"
             
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             st.rerun()
@@ -393,97 +399,3 @@ st.markdown(
     "</p>", 
     unsafe_allow_html=True
 )
-import streamlit as st
-import json
-import os
-import urllib.parse
-import random
-import string
-import math
-import google.generativeai as genai
-import streamlit.components.v1 as components
-
-# --- SAYFA AYARLARI ---
-st.set_page_config(
-    page_title="Eymen AI V2 - Premium",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# --- SOHBET HAFIZASI VE ÇOKLU OTURUM YÖNETİMİ ---
-if "chats" not in st.session_state:
-    st.session_state.chats = {"Sohbet 1": []}
-    st.session_state.current_chat = "Sohbet 1"
-
-st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
-
-# --- CSS VE STYLING ---
-st.markdown("""
-<style>
-    /* ÜÇ NOKTA ANİMASYONU */
-    .typing-dots {
-        display: inline-block;
-        margin-left: 5px;
-    }
-    .dot {
-        display: inline-block;
-        width: 6px;
-        height: 6px;
-        background-color: #2563eb;
-        border-radius: 50%;
-        animation: pulse 1.4s infinite ease-in-out both;
-        margin: 0 1px;
-    }
-    .dot:nth-child(1) { animation-delay: -0.32s; }
-    .dot:nth-child(2) { animation-delay: -0.16s; }
-    @keyframes pulse {
-        0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-        40% { transform: scale(1.0); opacity: 1; }
-    }
-    
-    [data-testid="stChatInput"] textarea, .stTextInput input, textarea { font-size: 16px !important; }
-    [data-testid="stSidebar"] { border-right: 1px solid rgba(128, 128, 128, 0.2); backdrop-filter: blur(10px); }
-    .user-bubble { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 16px 20px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25); font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; }
-    .ai-bubble { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); color: #f8fafc; padding: 16px 20px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(139, 92, 246, 0.4); box-shadow: 0 0 15px rgba(139, 92, 246, 0.35); font-family: 'Segoe UI', sans-serif; font-size: 1.05rem; backdrop-filter: blur(8px); }
-    
-    @media (prefers-color-scheme: light) {
-        .ai-bubble { background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%); color: #1e293b; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 0 15px rgba(16, 185, 129, 0.35); }
-    }
-    
-    .brand-eymen { font-size: 3.8rem; font-weight: 900; color: #2563eb; letter-spacing: 1px; }
-    .brand-v2 { font-size: 3.8rem; font-weight: 900; color: #38bdf8; margin-left: 15px; }
-    .subtitle { color: #64748b; text-align: center; font-size: 1.15rem; font-weight: 500; margin-bottom: 30px; }
-</style>
-""", unsafe_allow_html=True)
-
-
-
-# --- FOTOĞRAF OLUŞTURMA MOTORU (FİLTRESİZ) ---
-
-st.session_state.messages.append({"role": "user", "content": user_query})
-st.rerun()
-
-if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
-    user_query = st.session_state.messages[-1]["content"]
-    image_triggers = ["görsel oluştur", "resmi oluştur", "oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur"]
-    
-    if any(trigger in user_query.lower() for trigger in image_triggers):
-        # Animasyonlu Spinner Mesajı
-        with st.spinner(""):
-            st.markdown("""
-                <div style="display: flex; align-items: center; font-weight: bold; color: #64748b;">
-                    V2 Medya Motoru Görseli Hazırlıyor... 
-                    <div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # Filtresiz saf istek
-            encoded_prompt = urllib.parse.quote(user_query)
-            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
-            
-            st.session_state.messages.append({"role": "assistant", "content": "✨ Görselin hazır!", "image": image_url})
-            st.rerun()
-    else:
-        # Metin cevapları (Kodun geri kalanı aynı)
-        st.write("...") # Buraya ana Gemini akışını yerleştirirsin

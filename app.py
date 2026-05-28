@@ -166,7 +166,7 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
             except Exception as e:
                 hata = str(e)
                 if "429" in hata or "Quota" in hata:
-                    continue  # Diğer key'e geç
+                    continue 
                 else:
                     return f"Sistem hatası: {hata}", False
     return "Tüm API Key kotaları dolu. Lütfen 1 dakika sonra tekrar deneyin.", False
@@ -282,6 +282,13 @@ if user_query := st.chat_input("Eymen AI V2'ye bir şeyler sorun..."):
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]
     
+    # Sohbet geçmişini HER İKİ motor için de önden hazırla
+    formatted_history = []
+    for m in st.session_state.messages[:-1]:
+        if "image" not in m:
+            role = "user" if m["role"] == "user" else "model"
+            formatted_history.append({"role": role, "parts": [m["content"]]})
+            
     image_triggers = ["görsel oluştur", "resmi oluştur", "oluştur", "çiz", "hayal et", "resim oluştur", "fotoğraf oluştur", "fotoğraf yap", "resim yap"]
     
     if any(trigger in user_query.lower() for trigger in image_triggers):
@@ -294,27 +301,20 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 unsafe_allow_html=True
             )
             
-            clean_prompt = user_query
-            for trigger in image_triggers:
-                if trigger in clean_prompt.lower():
-                    clean_prompt = clean_prompt.lower().replace(trigger, "").strip()
-            
-            if not clean_prompt: 
-                clean_prompt = "A fluffy black cat with green eyes"
-            
-            # --- ULTRA GERÇEKÇİ PROMPT OPTİMİZASYONU ---
-            # Türkçe girilen istemi, motorun kusursuz anlaması için Gemini ile İngilizceye ve profesyonel çekim diline çeviriyoruz.
+            # --- BAĞLAMSAL (ARDARDA) PROMPT MOTORU ---
             prompt_instruction = (
-                "You are an expert AI prompt engineer. Translate the user's Turkish image request into a highly descriptive, professional English image prompt for a photorealistic text-to-image generator. "
-                "Keep the core subject EXACTLY as requested by the user. Do not add random characters or unrelated popular themes. Output ONLY the final English prompt string, absolutely nothing else."
+                "You are an expert AI prompt engineer. Translate the user's latest text-to-image request into a highly descriptive, professional English prompt. "
+                "CRUCIAL RULE: You have access to the conversation history. If the user says things like 'make it blue', 'draw another one', 'now do it at night', you MUST look at the previous messages to know what object they are referring to. "
+                "Output ONLY the final English prompt string, absolutely no conversational filler, no explanations."
             )
             
-            enhanced_prompt, success = calistir_gemini(clean_prompt, prompt_instruction)
-            if not success:
-                # API hatası olursa eski yönteme güvenli dönüş yapıyoruz
-                enhanced_prompt = clean_prompt
+            # Artık "geçmiş"i (formatted_history) çeviri motoruna yolluyoruz, böylece ne çizdiğini hatırlıyor!
+            enhanced_prompt, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
-            # Son dokunuş: En yüksek fotoğraf kalitesi parametrelerini ekle
+            if not success:
+                enhanced_prompt = "highly detailed photorealistic scene"
+            
+            # En yüksek fotoğraf kalitesi parametrelerini kalıcı olarak ekle
             master_prompt = f"{enhanced_prompt}, photorealistic, ultra-realistic, 8k photography, highly detailed, sharp focus, raw camera footage, lifelike"
             
             random_seed = random.randint(1, 99999999)
@@ -322,7 +322,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={random_seed}&nofeed=true"
             
-            ai_response = f"✨ İstediğin ultra gerçekçi görsel başarıyla üretildi! \n\n*Yapay Zeka İpucu: Arka planda istemin '{enhanced_prompt[:60]}...' olarak optimize edildi.*"
+            # İpucu yazısı tamamen temizlendi. Sadece görsel ve net bilgi!
+            ai_response = "✨ İstediğin ultra gerçekçi görsel başarıyla üretildi!"
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             st.rerun() 
             
@@ -335,20 +336,13 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 "Eymen tarafından geliştirildin. Konuyu durduk yere derse çekme, net ve kısa cevaplar ver."
             )
             
-            formatted_history = []
-            for m in st.session_state.messages[:-1]:
-                if "image" not in m:
-                    role = "user" if m["role"] == "user" else "model"
-                    formatted_history.append({"role": role, "parts": [m["content"]]})
-            
-            # Görsel dosya yükleme kontrolü
             görsel_parçası = None
             if uploaded_file is not None and uploaded_file.type.startswith("image/"):
                 bytes_data = uploaded_file.read()
                 görsel_parçası = {"mime_type": uploaded_file.type, "data": bytes_data}
                 uploaded_file.seek(0)
             
-            ai_response, cevap_alindi = calistir_gemini(user_query, system_instruction, formatted_history, görsel_parçası)
+            ai_response, cevap_alindi = calistir_gemini(user_query, system_instruction, geçmiş=formatted_history, görsel_parçası=görsel_parçası)
             
             if not cevap_alindi:
                 st.error(ai_response)

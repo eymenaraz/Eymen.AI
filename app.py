@@ -4,6 +4,7 @@ import urllib.parse
 import random
 import string
 import google.generativeai as genai
+import requests # Yeni kütüphane eklendi
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
@@ -135,7 +136,7 @@ with st.sidebar:
         qr_link = st.text_input("Linki girin:", key="qr_in")
         if qr_link:
             encoded_link = urllib.parse.quote(qr_link)
-            st.image(f"[https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=](https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=){encoded_link}", caption="QR Kod hazır!")
+            st.image(f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={encoded_link}", caption="QR Kod hazır!")
 
     with st.expander("🔑 Güvenli Şifre Oluşturucu"):
         pwd_length = st.number_input("Hane:", min_value=4, max_value=64, value=12, step=1, key="pwd_in")
@@ -186,16 +187,20 @@ with st.sidebar:
                 st.session_state.chats[yeni_sohbet_adi] = []
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
+                # Sinan Kuzucu kalitesi ve E şıkkı olmaması talimatı metin motoruna eklendi
                 sistem_istemi = f"Bana {sinav_tipi} müfredatına, MEB yeni nesil mantık muhakeme çıkmış soru tarzına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), SADECE abcd şıklarını, doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": sistem_istemi})
                 st.rerun()
                 
         if col2.button("Görsel Olarak Üret (Gol 6)", use_container_width=True):
              if ders_tipi:
+                # Yepyeni bir sohbet oluştur
                 yeni_sohbet_adi = f"🖼️ {sinav_tipi} Soru Görseli - {ders_tipi[:5]}"
                 st.session_state.chats[yeni_sohbet_adi] = []
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
+                
+                # Gol 6 talimatı: Tek fotoda tam sayfa şekilli soru,ABCD şıklar, sayılar
                 istem = f"Bana 1 adet ultra gerçekçi fotoğraf oluştur. Bu fotoğraf Sinan Kuzucu LGS deneme sınavı kalitesinde, '{ders_tipi}' konusunda tam sayfa yeni nesil zorlayıcı bir soru içersin. İçinde sorunun karmaşık bir şekli (diagramı), tüm soru metni, ABCD şıkları, sayılar ve soru numarası tam olarak yerleştirilmiş ve renderlanmış olsun. Typeset kalitesi hissettirsin. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": istem})
                 st.rerun()
@@ -214,7 +219,9 @@ for msg in st.session_state.messages:
     if msg["role"] == "user": st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         st.markdown(f'<div class="ai-bubble">{msg.get("content", "")}</div>', unsafe_allow_html=True)
-        if "image" in msg: st.markdown(f'<img src="{msg["image"]}" style="width: 100%; border-radius: 10px; margin-top: 10px;" alt="Yapay Zeka Görseli" />', unsafe_allow_html=True)
+        # HTML <img> Hatası Düzeltildi + ArtıkBytes'dan Yüklüyor (Tam Gerçekleşene Kadar Spinner Dönüyor)
+        if "image_bytes" in msg:
+            st.image(msg["image_bytes"], use_container_width=True)
 
 # --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Eymen AI V2'ye bir şeyler sorun..."):
@@ -233,10 +240,11 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     has_previous_image = any("image" in m for m in st.session_state.messages)
 
     if is_image_intent and (has_previous_image or "çiz" in user_query.lower() or "oluştur" in user_query.lower() or "yap" in user_query.lower()):
-        with st.spinner(""):
+        # Yepyeni bir spinner alanı: Görsel tam gelene kadar bu döner
+        with st.spinner("⏳ V2 Medya Motoru Analiz Ediyor... Görsel oluşturuluyor ve indiriliyor."):
             st.markdown(
                 '<div class="user-bubble" style="margin: 10px auto 10px 0; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); display: flex; align-items: center; gap: 5px; width: fit-content;">'
-                'V2 Medya Motoru Analiz Ediyor...<div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>', 
+                'Prompt Analiz Ediliyor...<div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>', 
                 unsafe_allow_html=True
             )
             
@@ -282,10 +290,27 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             master_prompt = enhanced_prompt
             encoded_prompt = urllib.parse.quote(master_prompt)
             
-            image_url = f"[https://image.pollinations.ai/prompt/](https://image.pollinations.ai/prompt/){encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
+            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
             
-            ai_response = "✨ Görsel hazır!"
-            st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
+            # --- YENİ MANTIK: GÖRSELİ ARKAPLANDA İNDİRİR (TAM TAMAMLANANA KADAR SPINNER DÖNER) ---
+            try:
+                # 30 saniye boyunca görselin sunucudan gelmesini bekle
+                media_response = requests.get(final_image_url, timeout=30)
+                if media_response.status_code == 200:
+                    # Görsel başarıyla indirildi, bytes olarak session state'e ekle
+                    image_content = media_response.content
+                    
+                    # Teknik yazı kaldırıldı, sadece hazır mesajı
+                    ai_response = "✨ Görsel hazır!"
+                    # "image" yerine "image_bytes" anahtarını kullanıyoruz
+                    st.session_state.messages.append({"role": "assistant", "content": ai_response, "image_bytes": image_content})
+                else:
+                    st.error(f"V2 Medya Motoru görseli oluştururken sunucu hatası aldı: {media_response.status_code}. Lütfen tekrar deneyin.")
+                    st.session_state.messages.pop() # Yanlış user mesajını sil
+            except requests.exceptions.RequestException as e:
+                st.error(f"V2 Medya Motoru Pollinations sunucusuna bağlanamadı veya işlem zaman aşımına uğradı: {e}")
+                st.session_state.messages.pop() # Yanlış user mesajını sil
+
             st.rerun() 
             
     else:

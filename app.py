@@ -120,19 +120,15 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
             except: return len(t) * (font_size * 0.6)
 
         lines = []
-        # Çözüm kısmını basmamak için sadece Soru ve Şıkları ayıklayalım (İsteğe bağlı)
-        # Eymen sadece soru ve şıkların tek görsel olmasını istiyor, çözüm panelde kalabilir veya eklenebilir.
         temiz_metin = soru_metni.split("Detaylı Çözüm")[0].split("Çözüm:")[0].strip()
         
         for paragraph in temiz_metin.split('\n'):
             if not paragraph.strip():
                 lines.append("")
                 continue
-            # Eğer satır zaten sığıyorsa (yan yana şıklar gibi) yapısını bozma
             if get_text_width(paragraph, font) <= max_width:
                 lines.append(paragraph)
             else:
-                # Sığmıyorsa kelime kelime bölerek wrap yap
                 words = paragraph.split(' ')
                 current_line = ""
                 for word in words:
@@ -148,7 +144,6 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
         line_height = font_size + 12
         text_height = len(lines) * line_height + 100
         
-        # Yeni bembeyaz bir geniş tuval oluşturuyoruz
         composite = Image.new("RGB", (dw, dh + int(text_height)), "white")
         composite.paste(diagram, (0, 0))
         
@@ -193,6 +188,7 @@ with st.sidebar:
     
     # --- AKILLI ARAÇ KUTUSU ---
     st.markdown("<h3 style='color: #38bdf8; font-size: 1.2rem; margin-top:10px;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
+    
     motor_secimi = st.selectbox(
         "🎨 Görsel Çizim Motoru",
         options=["flux", "turbo", "midjourney", "dall-e"],
@@ -202,12 +198,44 @@ with st.sidebar:
         st.session_state.aktif_motor = motor_secimi
         st.rerun()
         
-    if st.button("🎲 Seed Yenile (Yeni Tarz İçin)", use_container_width=True):
+    if st.button("🎲 Seed Yenile (Yeni Tarz)", use_container_width=True):
         st.session_state.image_seed = random.randint(1, 99999999)
         st.success("Seed yenilendi! Yeni görseller farklı olacak.")
         
-    st.write("---")
+    st.write("") # Boşluk
     
+    # 1. QR Kod Oluşturucu
+    with st.expander("🔗 QR Kod Oluşturucu"):
+        qr_metin = st.text_input("Link veya Metin girin:")
+        if st.button("Kodu Üret", use_container_width=True):
+            if qr_metin:
+                encoded_url = urllib.parse.quote(qr_metin)
+                api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={encoded_url}"
+                st.image(api_url, caption="QR Kodunuz Hazır!")
+            else:
+                st.warning("Lütfen bir metin girin.")
+
+    # 2. Hızlı Soru Hazırlayıcı
+    with st.expander("📝 Hızlı Soru Hazırlayıcı"):
+        hizli_konu = st.text_input("Soru Konusu (Örn: Üslü Sayılar)")
+        hizli_zorluk = st.selectbox("Zorluk Seviyesi", ["Kolay", "Orta", "Zor", "Ultra Zor (Yeni Nesil)"])
+        if st.button("Soruyu Üret", use_container_width=True):
+            if hizli_konu:
+                oto_istek = f"{hizli_konu} konusunda {hizli_zorluk} seviyesinde bir LGS sorusu hazırla."
+                st.session_state.messages.append({"role": "user", "content": oto_istek})
+                st.rerun()
+            else:
+                st.warning("Lütfen bir konu yazın.")
+
+    # 3. Haneye Göre Şifre Oluşturucu
+    with st.expander("🔑 Şifre Oluşturucu"):
+        hane_sayisi = st.slider("Şifre Uzunluğu (Hane)", min_value=4, max_value=32, value=12)
+        if st.button("Güvenli Şifre Üret", use_container_width=True):
+            karakterler = string.ascii_letters + string.digits + "!@#$%^&*"
+            uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
+            st.success(f"**{uretilen_sifre}**")
+            
+    st.write("---")
     st.info("🚀 COMPOSITE SYNTHESIS MOTOR ACTIVE")
 
 # --- MESAJLARI GÖSTERME (TEK GÖRSEL ENTEGRASYONU) ---
@@ -216,7 +244,6 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         if msg.get("is_composite") and "image_bytes" in msg:
-            # Tek bir birleşik görsel olarak ekrana bas
             st.image(msg["image_bytes"], use_container_width=True, caption="Eymen AI V2 - Soru Bankası Çıktısı")
             st.download_button(
                 label="📥 Soruyu Tek Görsel Olarak İndir (PNG)",
@@ -225,7 +252,6 @@ for msg in st.session_state.messages:
                 mime="image/png",
                 use_container_width=True
             )
-            # Altına panelde sadece hocaya özel çözümü basıyoruz
             if msg.get("content"):
                 with st.expander("🔑 Detaylı Çözüm ve Cevap Anahtarı (Panele Özel)"):
                     st.write(msg["content"])
@@ -298,10 +324,9 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                     # 3. İKİSİNİ BİRLEŞTİRİP TEK GÖRSEL YAPMA
                     composite_image_bytes = tek_gorsel_olustur(raw_image_bytes, soru_metni)
                     
-                    # Hafızaya tek parça olarak kaydet
                     st.session_state.messages.append({
                         "role": "assistant", 
-                        "content": soru_metni, # Çözüm kısmı burada kalacak, expander içinde açılacak
+                        "content": soru_metni, 
                         "image_bytes": composite_image_bytes,
                         "is_composite": True
                     })

@@ -189,7 +189,6 @@ with st.sidebar:
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
                 
-                # EN SEÇKİN HİBRİT TALİMAT: Hem metin kusursuz basılacak hem altına mükemmel çizim gelecek!
                 istem = f"Bana {sinav_tipi} müfredatına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda yeni nesil mantık muhakeme gerektiren harika bir soru hazırla. Altına eklenecek olan görsel diyagram için ise bana sadece ingilizce bir prompt üret. Soru metnini eksiksiz, net Türkçe, hatasız ve ABCD şıklarıyla birlikte yaz. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": istem})
                 st.rerun()
@@ -203,13 +202,18 @@ with st.sidebar:
             else: 
                 st.warning("Lütfen virgülle ayırarak seçenek girin.")
 
-# --- MESAJLARI GÖSTERME ---
+# --- MESAJLARI GÖSTERME KISMI GÜNCELLENDİ (ŞEKİL ÜSTTE, YAZI ALTTA) ---
 for msg in st.session_state.messages:
-    if msg["role"] == "user": st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
+    if msg["role"] == "user": 
+        st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
-        st.markdown(f'<div class="ai-bubble">{msg.get("content", "")}</div>', unsafe_allow_html=True)
+        # 1. ÖNCE ŞEKİL/GÖRSEL EKRANA BASILIR (VARSA)
         if "image_bytes" in msg:
             st.image(msg["image_bytes"], use_container_width=True)
+            
+        # 2. SONRA SORU METNİ VE ŞIKLAR EKRANA BASILIR
+        if msg.get("content"):
+            st.markdown(f'<div class="ai-bubble" style="margin-top: 5px;">{msg["content"]}</div>', unsafe_allow_html=True)
 
 # --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Eymen AI V2'ye bir şeyler sorun..."):
@@ -228,15 +232,15 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     has_previous_image = any("image" in m for m in st.session_state.messages)
 
     if is_image_intent and (has_previous_image or "çiz" in user_query.lower() or "oluştur" in user_query.lower() or "yap" in user_query.lower()):
-        with st.spinner("⏳ V2 Medya Motoru Analiz Ediyor... Mükemmel görsel oluşturuluyor ve indiriliyor."):
+        with st.spinner("⏳ V2 Medya Motoru Analiz Ediyor... Şekil Çiziliyor ve Metin Yazılıyor."):
             
             st.markdown(
                 '<div class="user-bubble" style="margin: 10px auto 10px 0; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); display: flex; align-items: center; gap: 5px; width: fit-content;">'
-                'Prompt Analiz Ediliyor...<div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>', 
+                'Şekil ve Soru Senkronize Ediliyor...<div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>', 
                 unsafe_allow_html=True
             )
             
-            # Yazı tipografisini en kusursuz hale getiren FLUX Masterpiece talimatı
+            # GÖRSEL (ŞEKİL) ÜRETİMİ İÇİN BÖLÜM
             prompt_instruction = (
                 "Sen uzman bir AI Prompt mühendisisin. Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
                 "KURALLAR:\n"
@@ -248,8 +252,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
-            # İlk önce metni temizce oluşturup basıyoruz
-            metin_talimati = "Sen uzman bir LGS soru yazarı ve öğretmenisin. Kullanıcının istediği konuya göre eksiksiz, hatasız, harika Türkçe metne sahip, ABCD şıklı yeni nesil bir soru metni ve detaylı çözümünü oluştur."
+            # KESİNLİKLE HATASIZ YAZI ÜRETİMİ İÇİN BÖLÜM (SIFIR HATA GARANTİSİ EKLENDİ)
+            metin_talimati = "Sen uzman bir soru yazarı ve öğretmenisin. Kullanıcının istediği konuya göre eksiksiz, KESİNLİKLE HATASIZ (%100 doğru çözümlü), mükemmel Türkçe metne sahip, mantık muhakeme gerektiren bir soru metni ve detaylı çözümünü oluştur. Çıktıyı şu düzenle ver: Önce Soru Hikayesi/Metni, ardından ABCD Şıkları, en son da detaylı Çözüm. E şıkkı asla kullanma."
             soru_metni, _ = calistir_gemini(user_query, metin_talimati, geçmiş=formatted_history)
             
             try:
@@ -277,10 +281,10 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 media_response = requests.get(final_image_url, timeout=40)
                 if media_response.status_code == 200:
                     image_content = media_response.content
-                    # Hem metni (Hatasız) hem de altındaki FLUX çizimini (Mükemmel grafik) kaydediyoruz
+                    
                     st.session_state.messages.append({
                         "role": "assistant", 
-                        "content": f"📝 **YENİ NESİL SORU BANKASI SAYFASI**\n\n{soru_metni}", 
+                        "content": f"{soru_metni}", 
                         "image_bytes": image_content
                     })
                 else:

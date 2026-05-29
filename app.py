@@ -96,7 +96,6 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
         dw, dh = diagram.size
         
         font_size = 22
-        # Türkçe karakterleri destekleyen sistem fontlarını tarayalım
         font_paths = [
             "Arial.ttf", "arial.ttf", "Helvetica.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -202,7 +201,7 @@ with st.sidebar:
         st.session_state.image_seed = random.randint(1, 99999999)
         st.success("Seed yenilendi! Yeni görseller farklı olacak.")
         
-    st.write("") # Boşluk
+    st.write("") 
     
     # 1. QR Kod Oluşturucu
     with st.expander("🔗 QR Kod Oluşturucu"):
@@ -215,13 +214,15 @@ with st.sidebar:
             else:
                 st.warning("Lütfen bir metin girin.")
 
-    # 2. Hızlı Soru Hazırlayıcı
+    # 2. Hızlı Soru Hazırlayıcı (Gelişmiş & Entegre Mod)
     with st.expander("📝 Hızlı Soru Hazırlayıcı"):
-        hizli_konu = st.text_input("Soru Konusu (Örn: Üslü Sayılar)")
+        hizli_sinav = st.selectbox("Sınav Seç", ["LGS", "YKS-TYT", "YKS-AYT", "Yazılı Sınav"])
+        hizli_ders = st.selectbox("Ders Seç", ["Matematik", "Fen Bilimleri", "Türkçe", "Tarih/İnkılap"])
+        hizli_konu = st.text_input("Soru Konusu (Örn: Çarpanlar ve Katlar)")
         hizli_zorluk = st.selectbox("Zorluk Seviyesi", ["Kolay", "Orta", "Zor", "Ultra Zor (Yeni Nesil)"])
         if st.button("Soruyu Üret", use_container_width=True):
             if hizli_konu:
-                oto_istek = f"{hizli_konu} konusunda {hizli_zorluk} seviyesinde bir LGS sorusu hazırla."
+                oto_istek = f"{hizli_sinav} sınavı {hizli_ders} dersi {hizli_konu} konusu için {hizli_zorluk} seviyesinde görsel diyagram içeren yeni nesil mükemmel bir soru oluştur."
                 st.session_state.messages.append({"role": "user", "content": oto_istek})
                 st.rerun()
             else:
@@ -277,6 +278,14 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     is_image_intent = any(trigger in user_query.lower() for trigger in image_triggers)
 
     if is_image_intent:
+        # Canlı V2 Medya Analiz Baloncuğu Animasyonu
+        st.markdown("""
+        <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);">
+            ⏳ V2 Medya Motoru Analiz Ediyor...
+            <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        """, unsafe_allow_html=True)
+        
         with st.spinner("⏳ V2 Dijital Sentez Motoru Çalışıyor... Görsel ve Metin Tek Dosyada Birleştiriliyor..."):
             
             # 1. GÖRSEL İÇİN PROMPT GENERATOR

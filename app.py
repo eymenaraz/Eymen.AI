@@ -190,6 +190,24 @@ with st.sidebar:
         st.rerun()
         
     st.write("---")
+    
+    # --- AKILLI ARAÇ KUTUSU ---
+    st.markdown("<h3 style='color: #38bdf8; font-size: 1.2rem; margin-top:10px;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
+    motor_secimi = st.selectbox(
+        "🎨 Görsel Çizim Motoru",
+        options=["flux", "turbo", "midjourney", "dall-e"],
+        index=["flux", "turbo", "midjourney", "dall-e"].index(st.session_state.aktif_motor)
+    )
+    if motor_secimi != st.session_state.aktif_motor:
+        st.session_state.aktif_motor = motor_secimi
+        st.rerun()
+        
+    if st.button("🎲 Seed Yenile (Yeni Tarz İçin)", use_container_width=True):
+        st.session_state.image_seed = random.randint(1, 99999999)
+        st.success("Seed yenilendi! Yeni görseller farklı olacak.")
+        
+    st.write("---")
+    
     st.info("🚀 COMPOSITE SYNTHESIS MOTOR ACTIVE")
 
 # --- MESAJLARI GÖSTERME (TEK GÖRSEL ENTEGRASYONU) ---

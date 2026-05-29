@@ -168,7 +168,7 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
 
 # --- SIDEBAR KONTROL PANELİ ---
 with st.sidebar:
-    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🛠️ KONTROL PANELİ</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🛠️ MENÜ</h2>", unsafe_allow_html=True)
     st.write("---")
     
     st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>💬 Aktif Oturumlar</b>", unsafe_allow_html=True)
@@ -218,7 +218,7 @@ for msg in st.session_state.messages:
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
 # --- ANA ETKİLEŞİM INPUTU ---
-if user_query := st.chat_input("Ders ve konuyu yazın (Örn: Matematik doğrusal denklemler yeni nesil görsel soru çiz)..."):
+if user_query := st.chat_input("Eymen AI'a birşeyler sor..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
 # --- YANIT MOTORU ---

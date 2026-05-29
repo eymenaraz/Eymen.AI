@@ -135,7 +135,7 @@ with st.sidebar:
         qr_link = st.text_input("Linki girin:", key="qr_in")
         if qr_link:
             encoded_link = urllib.parse.quote(qr_link)
-            st.image(f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={encoded_link}", caption="QR Kod hazır!")
+            st.image(f"[https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=](https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=){encoded_link}", caption="QR Kod hazır!")
 
     with st.expander("🔑 Güvenli Şifre Oluşturucu"):
         pwd_length = st.number_input("Hane:", min_value=4, max_value=64, value=12, step=1, key="pwd_in")
@@ -187,7 +187,7 @@ with st.sidebar:
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
                 # Sinan Kuzucu kalitesi ve E şıkkı olmaması talimatı metin motoruna eklendi
-                sistem_istemi = f"Bana {sinav_tipi} müfredatına, MEB/ÖSYM yeni nesil mantık muhakeme çıkmış soru tarzına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), SADECE abcd şıklarını, doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt. E şıkkı asla olmasın."
+                sistem_istemi = f"Bana {sinav_tipi} müfredatına, MEB yeni nesil mantık muhakeme çıkmış soru tarzına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), SADECE abcd şıklarını, doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": sistem_istemi})
                 st.rerun()
                 
@@ -200,7 +200,6 @@ with st.sidebar:
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
                 
                 # Gol 6 talimatı: Tek fotoda tam sayfa şekilli soru,ABCD şıklar, sayılar
-                # Not: Model metni mükemmel renderlayamayabilir. HALLUCINATION UYARISI
                 istem = f"Bana 1 adet ultra gerçekçi fotoğraf oluştur. Bu fotoğraf Sinan Kuzucu LGS deneme sınavı kalitesinde, '{ders_tipi}' konusunda tam sayfa yeni nesil zorlayıcı bir soru içersin. İçinde sorunun karmaşık bir şekli (diagramı), tüm soru metni, ABCD şıkları, sayılar ve soru numarası tam olarak yerleştirilmiş ve renderlanmış olsun. Typeset kalitesi hissettirsin. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": istem})
                 st.rerun()
@@ -260,8 +259,19 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             try:
-                cleaned_json = ai_json_response.replace("```json", "").replace("
-```", "").strip()
+                # Düzeltilen, daha güvenli JSON temizleme mantığı:
+                cleaned_json = ai_json_response.strip()
+                if cleaned_json.startswith("```json"):
+                    cleaned_json = cleaned_json[7:]
+                elif cleaned_json.startswith("```"):
+                    cleaned_json = cleaned_json[3:]
+                
+                if cleaned_json.endswith("
+```"):
+                    cleaned_json = cleaned_json[:-3]
+                    
+                cleaned_json = cleaned_json.strip()
+                
                 data = json.loads(cleaned_json)
                 is_new = data.get("is_new_subject", True)
                 enhanced_prompt = data.get("prompt", "a random image")
@@ -279,7 +289,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
             
-            # Teknik yazı kaldırıldı
             ai_response = "✨ Görsel hazır!"
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             st.rerun() 

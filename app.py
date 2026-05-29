@@ -186,20 +186,16 @@ with st.sidebar:
                 st.session_state.chats[yeni_sohbet_adi] = []
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
-                # Sinan Kuzucu kalitesi ve E şıkkı olmaması talimatı metin motoruna eklendi
                 sistem_istemi = f"Bana {sinav_tipi} müfredatına, MEB yeni nesil mantık muhakeme çıkmış soru tarzına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), SADECE abcd şıklarını, doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": sistem_istemi})
                 st.rerun()
                 
         if col2.button("Görsel Olarak Üret (Gol 6)", use_container_width=True):
              if ders_tipi:
-                # Yepyeni bir sohbet oluştur
                 yeni_sohbet_adi = f"🖼️ {sinav_tipi} Soru Görseli - {ders_tipi[:5]}"
                 st.session_state.chats[yeni_sohbet_adi] = []
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
-                
-                # Gol 6 talimatı: Tek fotoda tam sayfa şekilli soru,ABCD şıklar, sayılar
                 istem = f"Bana 1 adet ultra gerçekçi fotoğraf oluştur. Bu fotoğraf Sinan Kuzucu LGS deneme sınavı kalitesinde, '{ders_tipi}' konusunda tam sayfa yeni nesil zorlayıcı bir soru içersin. İçinde sorunun karmaşık bir şekli (diagramı), tüm soru metni, ABCD şıkları, sayılar ve soru numarası tam olarak yerleştirilmiş ve renderlanmış olsun. Typeset kalitesi hissettirsin. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": istem})
                 st.rerun()
@@ -259,16 +255,17 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             try:
-                # Düzeltilen, daha güvenli JSON temizleme mantığı:
+                # chr(96) kullanarak tırnak/backtick çakışmalarını tamamen sıfırlayan güvenli mantık:
+                bt = chr(96) * 3
                 cleaned_json = ai_json_response.strip()
-                if cleaned_json.startswith("```json"):
-                    cleaned_json = cleaned_json[7:]
-                elif cleaned_json.startswith("```"):
-                    cleaned_json = cleaned_json[3:]
                 
-                if cleaned_json.endswith("
-```"):
-                    cleaned_json = cleaned_json[:-3]
+                if cleaned_json.startswith(bt + "json"):
+                    cleaned_json = cleaned_json[len(bt + "json"):]
+                elif cleaned_json.startswith(bt):
+                    cleaned_json = cleaned_json[len(bt):]
+                
+                if cleaned_json.endswith(bt):
+                    cleaned_json = cleaned_json[:-len(bt)]
                     
                 cleaned_json = cleaned_json.strip()
                 
@@ -279,15 +276,13 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 is_new = True
                 enhanced_prompt = user_query 
             
-            # Ardışık oluşturma mantığı: Sadece yepyeni bir konuysa seed'i değiştir
-            # Değilse eski seed kalır, böylece resmin stili/yapısı korunarak üstüne ekleme yapılır.
             if is_new:
                 st.session_state.image_seed = random.randint(1, 99999999)
             
             master_prompt = enhanced_prompt
             encoded_prompt = urllib.parse.quote(master_prompt)
             
-            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
+            image_url = f"[https://image.pollinations.ai/prompt/](https://image.pollinations.ai/prompt/){encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
             
             ai_response = "✨ Görsel hazır!"
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})

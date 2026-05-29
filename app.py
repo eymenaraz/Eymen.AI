@@ -214,7 +214,7 @@ for msg in st.session_state.messages:
     if msg["role"] == "user": st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         st.markdown(f'<div class="ai-bubble">{msg.get("content", "")}</div>', unsafe_allow_html=True)
-        if "image" in msg: st.image(msg["image"], use_container_width=True)
+        if "image" in msg: st.markdown(f'<img src="{msg["image"]}" style="width: 100%; border-radius: 10px; margin-top: 10px;" alt="Yapay Zeka Görseli" />', unsafe_allow_html=True)
 
 # --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Eymen AI V2'ye bir şeyler sorun..."):

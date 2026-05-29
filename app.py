@@ -178,14 +178,31 @@ with st.sidebar:
     with st.expander("📝 Sınav Soru Hazırlayıcısı"):
         sinav_tipi = st.selectbox("Sınav Türü:", ["LGS", "YKS (TYT/AYT)", "KPSS", "ALES", "DGS"])
         ders_tipi = st.text_input("Ders/Konu (Örn: Matematik Çarpanlar):")
-        if st.button("Soruyu Üret ve Çöz", use_container_width=True):
+        
+        col1, col2 = st.columns(2)
+        if col1.button("Metin Olarak Üret", use_container_width=True):
             if ders_tipi:
                 yeni_sohbet_adi = f"{sinav_tipi} - {ders_tipi[:10]}"
                 st.session_state.chats[yeni_sohbet_adi] = []
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
-                sistem_istemi = f"Bana {sinav_tipi} müfredatına ve MEB/ÖSYM yeni nesil çıkmış soru tarzına tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), şıklarını (A, B, C, D), doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt."
+                # Sinan Kuzucu kalitesi ve E şıkkı olmaması talimatı metin motoruna eklendi
+                sistem_istemi = f"Bana {sinav_tipi} müfredatına, MEB/ÖSYM yeni nesil mantık muhakeme çıkmış soru tarzına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), SADECE abcd şıklarını, doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": sistem_istemi})
+                st.rerun()
+                
+        if col2.button("Görsel Olarak Üret (Gol 6)", use_container_width=True):
+             if ders_tipi:
+                # Yepyeni bir sohbet oluştur
+                yeni_sohbet_adi = f"🖼️ {sinav_tipi} Soru Görseli - {ders_tipi[:5]}"
+                st.session_state.chats[yeni_sohbet_adi] = []
+                st.session_state.current_chat = yeni_sohbet_adi
+                st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
+                
+                # Gol 6 talimatı: Tek fotoda tam sayfa şekilli soru,ABCD şıklar, sayılar
+                # Not: Model metni mükemmel renderlayamayabilir. HALLUCINATION UYARISI
+                istem = f"Bana 1 adet ultra gerçekçi fotoğraf oluştur. Bu fotoğraf Sinan Kuzucu LGS deneme sınavı kalitesinde, '{ders_tipi}' konusunda tam sayfa yeni nesil zorlayıcı bir soru içersin. İçinde sorunun karmaşık bir şekli (diagramı), tüm soru metni, ABCD şıkları, sayılar ve soru numarası tam olarak yerleştirilmiş ve renderlanmış olsun. Typeset kalitesi hissettirsin. E şıkkı asla olmasın."
+                st.session_state.messages.append({"role": "user", "content": istem})
                 st.rerun()
 
     with st.expander("🎲 Karar Çarkı (Sürpriz Özellik)"):
@@ -232,16 +249,19 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 "Sen uzman bir AI Prompt mühendisisin. Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
                 "KURALLAR:\n"
                 "1. Kullanıcı tamamen yeni bir resim istiyorsa 'is_new_subject': true yap.\n"
-                "2. Kullanıcı önceki resmi değiştirmek istiyorsa 'is_new_subject': false yap. Eski resmin ana konusunu kaybetmeden yeni isteği ekleyerek İNGİLİZCE tek bir prompt oluştur.\n"
-                "3. Kullanıcının istediği tarzı KESİNLİKLE KORU. İstenen metnin konusunu BİREBİR kopyala, alakasız şeyler üretme, sadece İngilizceye çevir.\n"
-                "4. Kullanıcı 'arkaplanı kaldır/sil' diyorsa şeffaf yapmak imkansızdır, bu yüzden prompta 'isolated on a pure solid white background' ekle.\n"
-                "5. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A low quality 144p brainrot meme image\"}"
+                "2. Kullanıcı önceki resmi değiştirmek veya ona bir şey eklemek istiyorsa 'is_new_subject': false yap. Eski resmin ana detaylarını SAKLAYARAK yeni isteği ekle ve İNGİLİZCE tek bir birleşik prompt oluştur.\n"
+                "3. Çıktı çok gerçekçi olmalı. Prompta her zaman 'ultra realistic, photorealistic, 8k resolution, highly detailed' gibi anahtar kelimeler ekle.\n"
+                "4. Kullanıcının istediği tarzı KESİNLİKLE KORU. İstenen metnin konusunu BİREBİR kopyala, alakasız şeyler üretme, sadece İngilizceye çevir.\n"
+                "5. E şıkkı asla olmasın, abcd formatı eklensin.\n"
+                "6. Kullanıcı 'arkaplanı kaldır/sil' diyorsa şeffaf yapmak imkansızdır, bu yüzden prompta 'isolated on a pure solid white background' ekle.\n"
+                "7. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A photorealistic image of...\"}"
             )
             
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             try:
-                cleaned_json = ai_json_response.replace("```json", "").replace("```", "").strip()
+                cleaned_json = ai_json_response.replace("```json", "").replace("
+```", "").strip()
                 data = json.loads(cleaned_json)
                 is_new = data.get("is_new_subject", True)
                 enhanced_prompt = data.get("prompt", "a random image")
@@ -249,14 +269,18 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 is_new = True
                 enhanced_prompt = user_query 
             
-            st.session_state.image_seed = random.randint(1, 99999999)
+            # Ardışık oluşturma mantığı: Sadece yepyeni bir konuysa seed'i değiştir
+            # Değilse eski seed kalır, böylece resmin stili/yapısı korunarak üstüne ekleme yapılır.
+            if is_new:
+                st.session_state.image_seed = random.randint(1, 99999999)
             
             master_prompt = enhanced_prompt
             encoded_prompt = urllib.parse.quote(master_prompt)
             
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
             
-            ai_response = f"✨ Görsel hazır! *(Motor: {st.session_state.aktif_motor.upper()} | Mod: {'Yeni' if is_new else 'Düzenleme'} | Filtreler: Kapalı)*"
+            # Teknik yazı kaldırıldı
+            ai_response = "✨ Görsel hazır!"
             st.session_state.messages.append({"role": "assistant", "content": ai_response, "image": image_url})
             st.rerun() 
             

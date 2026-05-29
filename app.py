@@ -4,7 +4,7 @@ import urllib.parse
 import random
 import string
 import google.generativeai as genai
-import requests # Yeni kütüphane eklendi
+import requests
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
@@ -114,18 +114,9 @@ with st.sidebar:
         
     st.write("---")
     
-    # 2. MOTOR SEÇİCİ
-    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>🎨 Fotoğraf Motoru (Model)</b>", unsafe_allow_html=True)
-    secilen_motor = st.selectbox(
-        "Motor Seçimi:", 
-        ["flux", "turbo"], 
-        index=["flux", "turbo"].index(st.session_state.aktif_motor),
-        help="Flux: Ultra gerçekçi, detaylı çizimler yapar. Turbo: Daha hızlı ama standart kalitededir.",
-        label_visibility="collapsed"
-    )
-    if secilen_motor != st.session_state.aktif_motor:
-        st.session_state.aktif_motor = secilen_motor
-        st.toast(f"Çizim motoru {secilen_motor.upper()} olarak güncellendi!", icon="🚀")
+    # 2. MOTOR BİLGİSİ
+    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>🎨 Görsel Grafik Motoru</b>", unsafe_allow_html=True)
+    st.info("🚀 FLUX ULTRA HD ENTEGRE EDİLDİ")
 
     st.write("---")
     
@@ -187,21 +178,19 @@ with st.sidebar:
                 st.session_state.chats[yeni_sohbet_adi] = []
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
-                # Sinan Kuzucu kalitesi ve E şıkkı olmaması talimatı metin motoruna eklendi
-                sistem_istemi = f"Bana {sinav_tipi} müfredatına, MEB yeni nesil mantık muhakeme çıkmış soru tarzına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. Sorunun görsel tasvirini (veya markdown tablolarını/şekillerini), SADECE abcd şıklarını, doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt. E şıkkı asla olmasın."
+                sistem_istemi = f"Bana {sinav_tipi} müfredatına, MEB yeni nesil mantık muhakeme çıkmış soru tarzına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda zorlayıcı ve kaliteli bir soru hazırla. SADECE abcd şıklarını, doğru ve detaylı adım adım çözümünü ver ve en sonda net bir şekilde Cevap Anahtarını belirt. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": sistem_istemi})
                 st.rerun()
                 
         if col2.button("Görsel Olarak Üret (Gol 6)", use_container_width=True):
              if ders_tipi:
-                # Yepyeni bir sohbet oluştur
                 yeni_sohbet_adi = f"🖼️ {sinav_tipi} Soru Görseli - {ders_tipi[:5]}"
                 st.session_state.chats[yeni_sohbet_adi] = []
                 st.session_state.current_chat = yeni_sohbet_adi
                 st.session_state.messages = st.session_state.chats[yeni_sohbet_adi]
                 
-                # Gol 6 talimatı: Tek fotoda tam sayfa şekilli soru,ABCD şıklar, sayılar
-                istem = f"Bana 1 adet ultra gerçekçi fotoğraf oluştur. Bu fotoğraf Sinan Kuzucu LGS deneme sınavı kalitesinde, '{ders_tipi}' konusunda tam sayfa yeni nesil zorlayıcı bir soru içersin. İçinde sorunun karmaşık bir şekli (diagramı), tüm soru metni, ABCD şıkları, sayılar ve soru numarası tam olarak yerleştirilmiş ve renderlanmış olsun. Typeset kalitesi hissettirsin. E şıkkı asla olmasın."
+                # EN SEÇKİN HİBRİT TALİMAT: Hem metin kusursuz basılacak hem altına mükemmel çizim gelecek!
+                istem = f"Bana {sinav_tipi} müfredatına ve Sinan Kuzucu yayınları kalitesine tam uygun, '{ders_tipi}' konusunda yeni nesil mantık muhakeme gerektiren harika bir soru hazırla. Altına eklenecek olan görsel diyagram için ise bana sadece ingilizce bir prompt üret. Soru metnini eksiksiz, net Türkçe, hatasız ve ABCD şıklarıyla birlikte yaz. E şıkkı asla olmasın."
                 st.session_state.messages.append({"role": "user", "content": istem})
                 st.rerun()
 
@@ -219,7 +208,6 @@ for msg in st.session_state.messages:
     if msg["role"] == "user": st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         st.markdown(f'<div class="ai-bubble">{msg.get("content", "")}</div>', unsafe_allow_html=True)
-        # HTML <img> Hatası Düzeltildi + ArtıkBytes'dan Yüklüyor (Tam Gerçekleşene Kadar Spinner Dönüyor)
         if "image_bytes" in msg:
             st.image(msg["image_bytes"], use_container_width=True)
 
@@ -240,46 +228,41 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     has_previous_image = any("image" in m for m in st.session_state.messages)
 
     if is_image_intent and (has_previous_image or "çiz" in user_query.lower() or "oluştur" in user_query.lower() or "yap" in user_query.lower()):
-        # Yepyeni bir spinner alanı: Görsel tam gelene kadar bu döner
-        with st.spinner("⏳ V2 Medya Motoru Analiz Ediyor... Görsel oluşturuluyor ve indiriliyor."):
+        with st.spinner("⏳ V2 Medya Motoru Analiz Ediyor... Mükemmel görsel oluşturuluyor ve indiriliyor."):
+            
             st.markdown(
                 '<div class="user-bubble" style="margin: 10px auto 10px 0; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); display: flex; align-items: center; gap: 5px; width: fit-content;">'
                 'Prompt Analiz Ediliyor...<div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>', 
                 unsafe_allow_html=True
             )
             
+            # Yazı tipografisini en kusursuz hale getiren FLUX Masterpiece talimatı
             prompt_instruction = (
                 "Sen uzman bir AI Prompt mühendisisin. Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
                 "KURALLAR:\n"
                 "1. Kullanıcı tamamen yeni bir resim istiyorsa 'is_new_subject': true yap.\n"
-                "2. Kullanıcı önceki resmi değiştirmek veya ona bir şey eklemek istiyorsa 'is_new_subject': false yap. Eski resmin ana detaylarını SAKLAYARAK yeni isteği ekle ve İNGİLİZCE tek bir birleşik prompt oluştur.\n"
-                "3. Çıktı çok gerçekçi olmalı. Prompta her zaman 'ultra realistic, photorealistic, 8k resolution, highly detailed' gibi anahtar kelimeler ekle.\n"
-                "4. Kullanıcının istediği tarzı KESİNLİKLE KORU. İstenen metnin konusunu BİREBİR kopyala, alakasız şeyler üretme, sadece İngilizceye çevir.\n"
-                "5. E şıkkı asla olmasın, abcd formatı eklensin.\n"
-                "6. Kullanıcı 'arkaplanı kaldır/sil' diyorsa şeffaf yapmak imkansızdır, bu yüzden prompta 'isolated on a pure solid white background' ekle.\n"
-                "7. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A photorealistic image of...\"}"
+                "2. Çıktı MÜKEMMEL netlikte olmalı. Prompta her zaman 'clean vector diagram, crisp printed layout, sharp typography, high contrast, minimalist educational style, corporate math book illustration, masterpiece, highly detailed, 8k resolution' ekle.\n"
+                "3. Görselin içinde anlamsız el yazıları olmamalıdır, sadece temiz çizgiler ve net matematiksel şekiller bulunmalıdır.\n"
+                "4. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A clean mathematical vector diagram of...\"}"
             )
             
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
+            # İlk önce metni temizce oluşturup basıyoruz
+            metin_talimati = "Sen uzman bir LGS soru yazarı ve öğretmenisin. Kullanıcının istediği konuya göre eksiksiz, hatasız, harika Türkçe metne sahip, ABCD şıklı yeni nesil bir soru metni ve detaylı çözümünü oluştur."
+            soru_metni, _ = calistir_gemini(user_query, metin_talimati, geçmiş=formatted_history)
+            
             try:
-                # chr(96) kullanarak tırnak/backtick çakışmalarını tamamen sıfırlayan güvenli mantık:
                 bt = chr(96) * 3
                 cleaned_json = ai_json_response.strip()
-                
-                if cleaned_json.startswith(bt + "json"):
-                    cleaned_json = cleaned_json[len(bt + "json"):]
-                elif cleaned_json.startswith(bt):
-                    cleaned_json = cleaned_json[len(bt):]
-                
-                if cleaned_json.endswith(bt):
-                    cleaned_json = cleaned_json[:-len(bt)]
-                    
+                if cleaned_json.startswith(bt + "json"): cleaned_json = cleaned_json[len(bt + "json"):]
+                elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
+                if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
                 cleaned_json = cleaned_json.strip()
                 
                 data = json.loads(cleaned_json)
                 is_new = data.get("is_new_subject", True)
-                enhanced_prompt = data.get("prompt", "a random image")
+                enhanced_prompt = data.get("prompt", "a clean geometry math diagram")
             except Exception:
                 is_new = True
                 enhanced_prompt = user_query 
@@ -287,33 +270,30 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             if is_new:
                 st.session_state.image_seed = random.randint(1, 99999999)
             
-            master_prompt = enhanced_prompt
-            encoded_prompt = urllib.parse.quote(master_prompt)
-            
+            encoded_prompt = urllib.parse.quote(enhanced_prompt)
             final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
             
-            # --- YENİ MANTIK: GÖRSELİ ARKAPLANDA İNDİRİR (TAM TAMAMLANANA KADAR SPINNER DÖNER) ---
             try:
-                # 30 saniye boyunca görselin sunucudan gelmesini bekle
-                media_response = requests.get(final_image_url, timeout=30)
+                media_response = requests.get(final_image_url, timeout=40)
                 if media_response.status_code == 200:
-                    # Görsel başarıyla indirildi, bytes olarak session state'e ekle
                     image_content = media_response.content
-                    
-                    # Teknik yazı kaldırıldı, sadece hazır mesajı
-                    ai_response = "✨ Görsel hazır!"
-                    # "image" yerine "image_bytes" anahtarını kullanıyoruz
-                    st.session_state.messages.append({"role": "assistant", "content": ai_response, "image_bytes": image_content})
+                    # Hem metni (Hatasız) hem de altındaki FLUX çizimini (Mükemmel grafik) kaydediyoruz
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": f"📝 **YENİ NESİL SORU BANKASI SAYFASI**\n\n{soru_metni}", 
+                        "image_bytes": image_content
+                    })
                 else:
-                    st.error(f"V2 Medya Motoru görseli oluştururken sunucu hatası aldı: {media_response.status_code}. Lütfen tekrar deneyin.")
-                    st.session_state.messages.pop() # Yanlış user mesajını sil
-            except requests.exceptions.RequestException as e:
-                st.error(f"V2 Medya Motoru Pollinations sunucusuna bağlanamadı veya işlem zaman aşımına uğradı: {e}")
-                st.session_state.messages.pop() # Yanlış user mesajını sil
+                    st.error("Mükemmel motor şu an meşgul, lütfen tekrar deneyin.")
+                    st.session_state.messages.pop()
+            except Exception as e:
+                st.error(f"Bağlantı zaman aşımına uğradı: {e}")
+                st.session_state.messages.pop()
 
             st.rerun() 
             
     else:
+        # NORMAL SOHBET MOTORU
         with st.spinner("Eymen AI V2 düşünüyor..."):
             system_instruction = (
                 "Sen Eymen AI V2 adında, her dersten tüm problemleri jet hızında çözen uzman bir asistansın. "

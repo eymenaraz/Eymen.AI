@@ -1,6 +1,8 @@
 import streamlit as st
 import json
 import urllib.parse
+import urllib.request
+import os
 import random
 import string
 import google.generativeai as genai
@@ -89,34 +91,49 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         
     return f"Bağlantı başarısız. Google'dan gelen son hata mesajı: {son_hata}", False
 
-# --- DİNAMİK GÖRSEL SENTEZ MOTORU (PILLOW) ---
+# --- DİNAMİK GÖRSEL SENTEZ MOTORU (A4 VE TÜRKÇE FONT DESTEĞİ) ---
 def tek_gorsel_olustur(diyagram_bytes, soru_metni):
     try:
-        diagram = Image.open(io.BytesIO(diyagram_bytes))
-        dw, dh = diagram.size
-        
-        font_size = 22
-        font_paths = [
-            "Arial.ttf", "arial.ttf", "Helvetica.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"
-        ]
-        font = None
-        for path in font_paths:
-            try:
-                font = ImageFont.truetype(path, font_size)
-                break
-            except:
-                continue
-        if font is None:
-            font = ImageFont.load_default()
-
+        # A4 Oranlarında Şablon
+        a4_width = 800
+        a4_height_min = 1130
         margin = 50
-        max_width = dw - (2 * margin)
+
+        # Türkçe Karakter Garantisi: İnternetten Font İndir
+        font_path = "Roboto-Regular.ttf"
+        if not os.path.exists(font_path):
+            try:
+                urllib.request.urlretrieve("https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf", font_path)
+            except:
+                pass
+
+        font_size = 24 # Okunabilir büyük punto
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+        except:
+            # Yedek fontlar
+            font_paths = ["Arial.ttf", "arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
+            font = ImageFont.load_default()
+            for path in font_paths:
+                try:
+                    font = ImageFont.truetype(path, font_size)
+                    break
+                except: continue
+
+        # Görseli optimize et ve boyutlandır
+        diagram = Image.open(io.BytesIO(diyagram_bytes))
+        # Diyagramı orantılı şekilde küçült ki A4 kağıdında devasa durmasın (max 500x500)
+        diagram.thumbnail((500, 500), Image.Resampling.LANCZOS)
+        dw, dh = diagram.size
+
+        # Metni hazırlama ve A4 sayfasına göre hizalama
+        max_text_width = a4_width - (2 * margin)
         
         def get_text_width(t, f):
-            try: return f.getbbox(t)[2] - f.getbbox(t)[0]
-            except: return len(t) * (font_size * 0.6)
+            try: return f.getlength(t)
+            except:
+                try: return f.getbbox(t)[2]
+                except: return len(t) * (font_size * 0.6)
 
         lines = []
         temiz_metin = soru_metni.split("Detaylı Çözüm")[0].split("Çözüm:")[0].strip()
@@ -125,32 +142,38 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
             if not paragraph.strip():
                 lines.append("")
                 continue
-            if get_text_width(paragraph, font) <= max_width:
-                lines.append(paragraph)
-            else:
-                words = paragraph.split(' ')
-                current_line = ""
-                for word in words:
-                    test_line = current_line + " " + word if current_line else word
-                    if get_text_width(test_line, font) <= max_width:
-                        current_line = test_line
-                    else:
-                        lines.append(current_line)
-                        current_line = word
-                if current_line:
+            words = paragraph.split(' ')
+            current_line = ""
+            for word in words:
+                test_line = current_line + " " + word if current_line else word
+                if get_text_width(test_line, font) <= max_text_width:
+                    current_line = test_line
+                else:
                     lines.append(current_line)
+                    current_line = word
+            if current_line:
+                lines.append(current_line)
+
+        line_height = font_size + 14
+        text_height = len(lines) * line_height
         
-        line_height = font_size + 12
-        text_height = len(lines) * line_height + 100
-        
-        composite = Image.new("RGB", (dw, dh + int(text_height)), "white")
-        composite.paste(diagram, (0, 0))
-        
+        # Sayfa yüksekliğini ayarla (Diyagram + Metin sığıyorsa A4, sığmıyorsa uzat)
+        total_height = margin + dh + 40 + text_height + margin
+        final_height = max(a4_height_min, int(total_height))
+
+        # Beyaz zemin oluştur
+        composite = Image.new("RGB", (a4_width, final_height), "white")
         draw = ImageDraw.Draw(composite)
-        y_cursor = dh + 40
+
+        # Görseli en üste, ortaya hizala
+        x_diagram = (a4_width - dw) // 2
+        y_cursor = margin
+        composite.paste(diagram, (x_diagram, y_cursor))
         
+        # Metni görselin altına yaz (Koyu renkli daha şık mürekkep rengi)
+        y_cursor += dh + 40
         for line in lines:
-            draw.text((margin, y_cursor), line, fill="black", font=font)
+            draw.text((margin, y_cursor), line, fill="#0f172a", font=font)
             y_cursor += line_height
             
         out_bytes = io.BytesIO()
@@ -203,7 +226,6 @@ with st.sidebar:
         
     st.write("") 
     
-    # 1. QR Kod Oluşturucu
     with st.expander("🔗 QR Kod Oluşturucu"):
         qr_metin = st.text_input("Link veya Metin girin:")
         if st.button("Kodu Üret", use_container_width=True):
@@ -214,11 +236,10 @@ with st.sidebar:
             else:
                 st.warning("Lütfen bir metin girin.")
 
-    # 2. Hızlı Soru Hazırlayıcı (Gelişmiş & Entegre Mod)
     with st.expander("📝 Hızlı Soru Hazırlayıcı"):
         hizli_sinav = st.selectbox("Sınav Seç", ["LGS", "YKS-TYT", "YKS-AYT", "Yazılı Sınav"])
         hizli_ders = st.selectbox("Ders Seç", ["Matematik", "Fen Bilimleri", "Türkçe", "Tarih/İnkılap"])
-        hizli_konu = st.text_input("Soru Konusu (Örn: Çarpanlar ve Katlar)")
+        hizli_konu = st.text_input("Soru Konusu (Örn: Kareköklü Sayılar)")
         hizli_zorluk = st.selectbox("Zorluk Seviyesi", ["Kolay", "Orta", "Zor", "Ultra Zor (Yeni Nesil)"])
         if st.button("Soruyu Üret", use_container_width=True):
             if hizli_konu:
@@ -228,7 +249,6 @@ with st.sidebar:
             else:
                 st.warning("Lütfen bir konu yazın.")
 
-    # 3. Haneye Göre Şifre Oluşturucu
     with st.expander("🔑 Şifre Oluşturucu"):
         hane_sayisi = st.slider("Şifre Uzunluğu (Hane)", min_value=4, max_value=32, value=12)
         if st.button("Güvenli Şifre Üret", use_container_width=True):
@@ -278,7 +298,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     is_image_intent = any(trigger in user_query.lower() for trigger in image_triggers)
 
     if is_image_intent:
-        # Canlı V2 Medya Analiz Baloncuğu Animasyonu
         st.markdown("""
         <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);">
             ⏳ V2 Medya Motoru Analiz Ediyor...
@@ -286,9 +305,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         </div>
         """, unsafe_allow_html=True)
         
-        with st.spinner("⏳ V2 Dijital Sentez Motoru Çalışıyor... Görsel ve Metin Tek Dosyada Birleştiriliyor..."):
+        with st.spinner("⏳ V2 Dijital Sentez Motoru Çalışıyor... Görsel ve Metin LGS Formatında Birleştiriliyor..."):
             
-            # 1. GÖRSEL İÇİN PROMPT GENERATOR
             prompt_instruction = (
                 "Sen uzman bir AI Prompt mühendisisin. Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
                 "KURALLAR:\n"
@@ -297,12 +315,11 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             )
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
-            # 2. METİN VE AKILLI ŞIK DİZİLİMİ
             metin_talimati = (
                 "Sen uzman bir soru yazarı ve LGS öğretmenisin. Kullanıcının istediği konuya göre KESİNLİKLE HATASIZ (%100 doğru çözümlü), mükemmel Türkçe metne sahip bir soru metni ve detaylı çözümünü oluştur.\n\n"
                 "ŞIK DÜZENİ KURALLARI:\n"
-                "- Eğer şıklar yorum içeriyorsa veya uzun cümlelerse, şıkları MUTLAKA alt alta ve aralarında birer boş satır olacak şekilde yaz. (Örn:\n A) Birinci uzun metin...\n\n B) İkinci uzun metin...)\n"
-                "- Eğer şıklar matematikteki gibi sadece KISA SAYILAR veya harflerden oluşuyorsa, hepsini aynı satıra (yan yana), aralarında belirgin geniş boşluklar bırakarak yaz. (Örn: A) 12          B) 18          C) 24          D) 36)\n\n"
+                "- Eğer şıklar yorum içeriyorsa veya uzun cümlelerse, şıkları MUTLAKA alt alta ve aralarında birer boş satır olacak şekilde yaz.\n"
+                "- Eğer şıklar matematikteki gibi sadece KISA SAYILAR veya harflerden oluşuyorsa, hepsini aynı satıra (yan yana), aralarında belirgin geniş boşluklar bırakarak yaz.\n\n"
                 "Çıktı Formatı:\n"
                 "1. Soru Hikayesi/Metni\n"
                 "2. Şıklar (yukarıdaki akıllı düzene göre)\n"
@@ -330,7 +347,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 if media_response.status_code == 200:
                     raw_image_bytes = media_response.content
                     
-                    # 3. İKİSİNİ BİRLEŞTİRİP TEK GÖRSEL YAPMA
                     composite_image_bytes = tek_gorsel_olustur(raw_image_bytes, soru_metni)
                     
                     st.session_state.messages.append({
@@ -349,7 +365,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             st.rerun() 
             
     else:
-        # NORMAL SOHBET MOTORU
         with st.spinner("Eymen AI V2 düşünüyor..."):
             system_instruction = (
                 "Sen Eymen AI V2 adında, her dersten tüm problemleri jet hızında çözen uzman bir asistansın. Eymen tarafından geliştirildin."

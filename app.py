@@ -12,7 +12,7 @@ import io
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - Premium",
+    page_title="Eyx AI - Premium v3.0",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -25,9 +25,6 @@ if "chats" not in st.session_state:
 
 if "image_seed" not in st.session_state:
     st.session_state.image_seed = random.randint(1, 99999999)
-
-if "aktif_motor" not in st.session_state:
-    st.session_state.aktif_motor = "flux"
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
@@ -201,15 +198,6 @@ with st.sidebar:
     # --- AKILLI ARAÇ KUTUSU ---
     st.markdown("<h3 style='color: #38bdf8; font-size: 1.2rem; margin-top:10px;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
     
-    motor_secimi = st.selectbox(
-        "🎨 Görsel Çizim Motoru",
-        options=["flux", "turbo", "midjourney", "dall-e"],
-        index=["flux", "turbo", "midjourney", "dall-e"].index(st.session_state.aktif_motor)
-    )
-    if motor_secimi != st.session_state.aktif_motor:
-        st.session_state.aktif_motor = motor_secimi
-        st.rerun()
-        
     if st.button("🎲 Seed Yenile (Yeni Tarz)", use_container_width=True):
         st.session_state.image_seed = random.randint(1, 99999999)
         st.success("Seed yenilendi! Yeni görseller farklı olacak.")
@@ -335,7 +323,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             
             st.session_state.image_seed = random.randint(1, 99999999)
             encoded_prompt = urllib.parse.quote(enhanced_prompt)
-            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
+            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model=flux"
             
             try:
                 media_response = requests.get(final_image_url, timeout=40)
@@ -369,8 +357,10 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         
         with st.spinner("⏳ Eyx Görsel Sentez Motoru Çalışıyor..."):
             prompt_instruction = (
-                "Sen uzman bir AI Prompt mühendisisin. Kullanıcının görsel isteğini analiz edip İngilizce detaylı bir resim promptu oluştur ve JSON döndür.\n"
-                "ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"prompt\": \"A highly detailed futuristic cyberpunk city with neon lights and flying cars...\"}"
+                "Sen dünya standartlarında profesyonel bir AI Görsel Prompt Mühendisisin. Görevin, kullanıcının isteğini en yüksek kalitede, estetik ve detaylı bir İngilizce görsel promptuna (tasvirine) dönüştürmek.\n"
+                "KURALLAR:\n"
+                "1. Çıktı olarak ASLA bir senaryo, açıklama, giriş veya sohbet metni yazma.\n"
+                "2. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON FORMATINDA OLMALIDIR: {\"prompt\": \"Buraya son derece detaylı, sinematik, yüksek kaliteli İngilizce görsel promptunu yaz\"}"
             )
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
@@ -381,13 +371,13 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
                 if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
                 data = json.loads(cleaned_json.strip())
-                enhanced_prompt = data.get("prompt", "a beautiful high quality image")
+                enhanced_prompt = data.get("prompt", "a beautiful high quality cinematic masterpiece, 8k resolution")
             except Exception:
-                enhanced_prompt = "beautiful high quality image based on user request"
+                enhanced_prompt = user_query + ", highly detailed, cinematic lighting, 8k, photorealistic"
                 
             st.session_state.image_seed = random.randint(1, 99999999)
             encoded_prompt = urllib.parse.quote(enhanced_prompt)
-            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
+            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model=flux"
             
             try:
                 media_response = requests.get(final_image_url, timeout=40)

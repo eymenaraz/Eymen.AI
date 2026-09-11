@@ -12,7 +12,7 @@ import io
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - Premium v3.0",
+    page_title="Eyx AI - Premium",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -28,19 +28,42 @@ if "image_seed" not in st.session_state:
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
-# --- CSS VE STYLING (IOS OPTİMİZASYONLU PREMIUM UI) ---
+# --- CSS VE STYLING (IOS OPTİMİZASYONLU PREMIUM UI & MAVİ NEON ANİMASYON) ---
 st.markdown("""
 <style>
     [data-testid="stChatInput"] textarea, .stTextInput input, textarea { font-size: 16px !important; -webkit-text-size-adjust: 100%; }
     [data-testid="stSidebar"] { border-right: 1px solid rgba(128, 128, 128, 0.15); background-color: #0f172a !important; }
     .user-bubble { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
     .ai-bubble { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); color: #f8fafc; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    
+    /* Mavi Neon Sakin Işık Efekti */
+    .neon-loading-box {
+        background: rgba(15, 23, 42, 0.85);
+        color: #38bdf8;
+        padding: 16px 22px;
+        border-radius: 16px;
+        margin: 10px auto 10px 0;
+        max-width: 85%;
+        border: 1px solid #38bdf8;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4), inset 0 0 10px rgba(56, 189, 248, 0.2);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        animation: neonGlow 2s infinite alternate ease-in-out;
+    }
+    @keyframes neonGlow {
+        0% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); border-color: rgba(56, 189, 248, 0.5); }
+        100% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.8); border-color: rgba(56, 189, 248, 1); }
+    }
+
     .logo-container { text-align: center; margin-bottom: 2px; padding: 5px; }
     .brand-eymen { font-size: 3.5rem; font-weight: 900; color: #2563eb; text-shadow: 0 0 15px rgba(37, 99, 235, 0.3); }
     .brand-v2 { font-size: 3.5rem; font-weight: 900; color: #38bdf8; text-shadow: 0 0 15px rgba(56, 189, 248, 0.4); margin-left: 10px; }
     .subtitle { color: #64748b; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 25px; }
     .typing-dots { display: inline-flex; align-items: center; margin-left: 8px; }
-    .dot { width: 7px; height: 7px; background-color: white; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+    .dot { width: 7px; height: 7px; background-color: #38bdf8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
     .dot:nth-child(1) { animation-delay: -0.32s; }
     .dot:nth-child(2) { animation-delay: -0.16s; }
     @keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
@@ -237,7 +260,7 @@ with st.sidebar:
     st.write("---")
     st.info("🚀 EYX SYNTHESIS MOTOR ACTIVE")
 
-# --- MESAJLARI GÖSTERME (TEK GÖRSEL ENTEGRASYONU) ---
+# --- MESAJLARI GÖSTERME ---
 for msg in st.session_state.messages:
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -346,16 +369,17 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
             st.rerun() 
 
-    # 2. DURUM: KULLANICI SADECE RESİM ÇİZDİRMEK İSTİYOR
+    # 2. DURUM: KULLANICI SADECE RESİM / GÖRSEL ÇİZDİRMEK İSTİYOR
     elif is_image_intent:
+        # İstenen mavi neon sakin ışıklarda V3.0 medya motoru mesajı
         st.markdown("""
-        <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);">
-            ⏳ Eyx Medya Motoru Çiziyor...
+        <div class="neon-loading-box">
+            ✨ Mavi neon sakin ışıklarda V3.0 medya motoru, görseli hazırlıyor...
             <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
         """, unsafe_allow_html=True)
         
-        with st.spinner("⏳ Eyx Görsel Sentez Motoru Çalışıyor..."):
+        with st.spinner("⏳ Görsel işleniyor..."):
             prompt_instruction = (
                 "Sen dünya standartlarında profesyonel bir AI Görsel Prompt Mühendisisin. Görevin, kullanıcının isteğini en yüksek kalitede, estetik ve detaylı bir İngilizce görsel promptuna (tasvirine) dönüştürmek.\n"
                 "KURALLAR:\n"

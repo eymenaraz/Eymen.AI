@@ -13,7 +13,7 @@ import io
 # --- SAYFA AYARLARI ---
 st.set_page_config(
     page_title="Eyx AI - Premium",
-    page_icon="🤖",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -163,7 +163,7 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
                 genai.configure(api_key=aktif_key)
                 # Kararlı ve hatasız model yapılandırması (bilinmeyen alan hatalarını önlemek için tools kaldırıldı)
                 model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash", 
+                    model_name="gemini-2.5-flash", 
                     system_instruction=sistem_talimati
                 )
                 

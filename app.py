@@ -12,7 +12,7 @@ import io
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eymen AI V2 - Premium",
+    page_title="Eyx AI - Premium",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -51,7 +51,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- BAŞLIK ALANI ---
-st.markdown('<div class="logo-container"><span class="brand-eymen">Eymen AI</span><span class="brand-v2">V2</span></div>', unsafe_allow_html=True)
+st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Premium Yapay Zeka & Akıllı Sentez Motoru</p>', unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", help="Sadece analiz içindir.")
@@ -94,12 +94,10 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
 # --- DİNAMİK GÖRSEL SENTEZ MOTORU (A4 VE TÜRKÇE FONT DESTEĞİ) ---
 def tek_gorsel_olustur(diyagram_bytes, soru_metni):
     try:
-        # A4 Oranlarında Şablon
         a4_width = 800
         a4_height_min = 1130
         margin = 50
 
-        # Türkçe Karakter Garantisi: İnternetten Font İndir
         font_path = "Roboto-Regular.ttf"
         if not os.path.exists(font_path):
             try:
@@ -107,11 +105,10 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
             except:
                 pass
 
-        font_size = 24 # Okunabilir büyük punto
+        font_size = 24 
         try:
             font = ImageFont.truetype(font_path, font_size)
         except:
-            # Yedek fontlar
             font_paths = ["Arial.ttf", "arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
             font = ImageFont.load_default()
             for path in font_paths:
@@ -120,13 +117,10 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
                     break
                 except: continue
 
-        # Görseli optimize et ve boyutlandır
         diagram = Image.open(io.BytesIO(diyagram_bytes))
-        # Diyagramı orantılı şekilde küçült ki A4 kağıdında devasa durmasın (max 500x500)
         diagram.thumbnail((500, 500), Image.Resampling.LANCZOS)
         dw, dh = diagram.size
 
-        # Metni hazırlama ve A4 sayfasına göre hizalama
         max_text_width = a4_width - (2 * margin)
         
         def get_text_width(t, f):
@@ -157,20 +151,16 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
         line_height = font_size + 14
         text_height = len(lines) * line_height
         
-        # Sayfa yüksekliğini ayarla (Diyagram + Metin sığıyorsa A4, sığmıyorsa uzat)
         total_height = margin + dh + 40 + text_height + margin
         final_height = max(a4_height_min, int(total_height))
 
-        # Beyaz zemin oluştur
         composite = Image.new("RGB", (a4_width, final_height), "white")
         draw = ImageDraw.Draw(composite)
 
-        # Görseli en üste, ortaya hizala
         x_diagram = (a4_width - dw) // 2
         y_cursor = margin
         composite.paste(diagram, (x_diagram, y_cursor))
         
-        # Metni görselin altına yaz (Koyu renkli daha şık mürekkep rengi)
         y_cursor += dh + 40
         for line in lines:
             draw.text((margin, y_cursor), line, fill="#0f172a", font=font)
@@ -257,7 +247,7 @@ with st.sidebar:
             st.success(f"**{uretilen_sifre}**")
             
     st.write("---")
-    st.info("🚀 COMPOSITE SYNTHESIS MOTOR ACTIVE")
+    st.info("🚀 EYX SYNTHESIS MOTOR ACTIVE")
 
 # --- MESAJLARI GÖSTERME (TEK GÖRSEL ENTEGRASYONU) ---
 for msg in st.session_state.messages:
@@ -265,11 +255,11 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         if msg.get("is_composite") and "image_bytes" in msg:
-            st.image(msg["image_bytes"], use_container_width=True, caption="Eymen AI V2 - Soru Bankası Çıktısı")
+            st.image(msg["image_bytes"], use_container_width=True, caption="Eyx AI - Soru Bankası Çıktısı")
             st.download_button(
                 label="📥 Soruyu Tek Görsel Olarak İndir (PNG)",
                 data=msg["image_bytes"],
-                file_name="eymen_ai_v2_soru.png",
+                file_name="eyx_ai_soru.png",
                 mime="image/png",
                 use_container_width=True
             )
@@ -283,30 +273,35 @@ for msg in st.session_state.messages:
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
 # --- ANA ETKİLEŞİM INPUTU ---
-if user_query := st.chat_input("Eymen AI'a birşeyler sor..."):
+if user_query := st.chat_input("Eyx AI'a bir şeyler sor..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
 # --- YANIT MOTORU ---
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]
+    user_query_lower = user_query.lower()
     
     formatted_history = []
     for m in st.session_state.messages[:-1]:
-        formatted_history.append({"role": "user" if m["role"] == "user" else "model", "parts": [m.get("content", "Görsel isteği.")]})
+        formatted_history.append({"role": "user" if m["role"] == "user" else "model", "parts": [m.get("content", "İstek.")]})
             
-    image_triggers = ["görsel", "resim", "oluştur", "çiz", "hayal et", "fotoğraf", "yap", "diyagram"]
-    is_image_intent = any(trigger in user_query.lower() for trigger in image_triggers)
+    # AKILLI TETİKLEYİCİLER (INTENT ROUTING)
+    question_triggers = ["soru oluştur", "soru yaz", "soru hazırla", "sorusu hazırla", "sorusu yaz", "sorusu oluştur", "test hazırla", "deneme hazırla"]
+    image_triggers = ["görsel çiz", "resim çiz", "görsel oluştur", "resim oluştur", "fotoğraf", "resmini yap", "görselini yap", "diyagram"]
+    
+    is_question_intent = any(t in user_query_lower for t in question_triggers)
+    is_image_intent = any(t in user_query_lower for t in image_triggers) and not is_question_intent
 
-    if is_image_intent:
+    # 1. DURUM: KULLANICI SORU HAZIRLAMASINI İSTİYOR
+    if is_question_intent:
         st.markdown("""
         <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);">
-            ⏳ V2 Medya Motoru Analiz Ediyor...
+            ⏳ Eyx Eğitim Motoru Analiz Ediyor...
             <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
         """, unsafe_allow_html=True)
         
-        with st.spinner("⏳ V2 Dijital Sentez Motoru Çalışıyor... Görsel ve Metin LGS Formatında Birleştiriliyor..."):
-            
+        with st.spinner("⏳ Eyx Soru Sentez Motoru Çalışıyor (A4 Formatı)..."):
             prompt_instruction = (
                 "Sen uzman bir AI Prompt mühendisisin. Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
                 "KURALLAR:\n"
@@ -346,7 +341,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 media_response = requests.get(final_image_url, timeout=40)
                 if media_response.status_code == 200:
                     raw_image_bytes = media_response.content
-                    
                     composite_image_bytes = tek_gorsel_olustur(raw_image_bytes, soru_metni)
                     
                     st.session_state.messages.append({
@@ -363,11 +357,62 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 st.session_state.messages.pop()
 
             st.rerun() 
+
+    # 2. DURUM: KULLANICI SADECE RESİM ÇİZDİRMEK İSTİYOR
+    elif is_image_intent:
+        st.markdown("""
+        <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);">
+            ⏳ Eyx Medya Motoru Çiziyor...
+            <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        with st.spinner("⏳ Eyx Görsel Sentez Motoru Çalışıyor..."):
+            prompt_instruction = (
+                "Sen uzman bir AI Prompt mühendisisin. Kullanıcının görsel isteğini analiz edip İngilizce detaylı bir resim promptu oluştur ve JSON döndür.\n"
+                "ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"prompt\": \"A highly detailed futuristic cyberpunk city with neon lights and flying cars...\"}"
+            )
+            ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
+            try:
+                bt = chr(96) * 3
+                cleaned_json = ai_json_response.strip()
+                if cleaned_json.startswith(bt + "json"): cleaned_json = cleaned_json[len(bt + "json"):]
+                elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
+                if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
+                data = json.loads(cleaned_json.strip())
+                enhanced_prompt = data.get("prompt", "a beautiful high quality image")
+            except Exception:
+                enhanced_prompt = "beautiful high quality image based on user request"
+                
+            st.session_state.image_seed = random.randint(1, 99999999)
+            encoded_prompt = urllib.parse.quote(enhanced_prompt)
+            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model={st.session_state.aktif_motor}"
+            
+            try:
+                media_response = requests.get(final_image_url, timeout=40)
+                if media_response.status_code == 200:
+                    raw_image_bytes = media_response.content
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": "İşte istediğin görsel hazır! 🎨", 
+                        "image_bytes": raw_image_bytes,
+                        "is_composite": False
+                    })
+                else:
+                    st.error("Görsel motoru yanıt vermedi.")
+                    st.session_state.messages.pop()
+            except Exception as e:
+                st.error(f"Bağlantı zaman aşımı: {e}")
+                st.session_state.messages.pop()
+
+            st.rerun()
+            
+    # 3. DURUM: NORMAL SOHBET / SORU CEVAPLAMA
     else:
-        with st.spinner("Eymen AI V2 düşünüyor..."):
+        with st.spinner("Eyx AI düşünüyor..."):
             system_instruction = (
-                "Sen Eymen AI V2 adında, her dersten tüm problemleri jet hızında çözen uzman bir asistansın. Eymen tarafından geliştirildin."
+                "Sen Eyx AI adında, her dersten tüm problemleri jet hızında çözen uzman bir asistansın. Eymen (Mertcan) tarafından geliştirildin."
             )
             görsel_parçası = None
             if uploaded_file and uploaded_file.type.startswith("image/"):
@@ -384,4 +429,4 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
 # --- ALT BİLGİ ---
 st.write("---")
-st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem; font-weight: 500;'>Eymen AI V2 © 2026 | </p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem; font-weight: 500;'>Eyx AI © 2026</p>", unsafe_allow_html=True)

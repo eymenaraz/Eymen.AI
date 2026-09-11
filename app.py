@@ -36,16 +36,16 @@ st.markdown("""
     .user-bubble { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
     .ai-bubble { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); color: #f8fafc; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
     
-    /* Mavi Neon Sakin Işık Efekti */
+    /* Mavi Neon Sakin Işık Efekti (Renk tonları ve aydınlatma olarak) */
     .neon-loading-box {
-        background: rgba(15, 23, 42, 0.85);
-        color: #38bdf8;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 58, 138, 0.85) 100%);
+        color: #93c5fd;
         padding: 16px 22px;
         border-radius: 16px;
         margin: 10px auto 10px 0;
         max-width: 85%;
-        border: 1px solid #38bdf8;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4), inset 0 0 10px rgba(56, 189, 248, 0.2);
+        border: 1px solid rgba(56, 189, 248, 0.6);
+        box-shadow: 0 0 25px rgba(37, 99, 235, 0.35), inset 0 0 12px rgba(56, 189, 248, 0.25);
         font-family: 'Segoe UI', system-ui, sans-serif;
         font-size: 1.05rem;
         font-weight: 600;
@@ -54,8 +54,8 @@ st.markdown("""
         animation: neonGlow 2s infinite alternate ease-in-out;
     }
     @keyframes neonGlow {
-        0% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); border-color: rgba(56, 189, 248, 0.5); }
-        100% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.8); border-color: rgba(56, 189, 248, 1); }
+        0% { box-shadow: 0 0 12px rgba(37, 99, 235, 0.3); border-color: rgba(56, 189, 248, 0.4); }
+        100% { box-shadow: 0 0 30px rgba(56, 189, 248, 0.7); border-color: rgba(56, 189, 248, 0.9); }
     }
 
     .logo-container { text-align: center; margin-bottom: 2px; padding: 5px; }
@@ -298,10 +298,14 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             
     # AKILLI TETİKLEYİCİLER (INTENT ROUTING)
     question_triggers = ["soru oluştur", "soru yaz", "soru hazırla", "sorusu hazırla", "sorusu yaz", "sorusu oluştur", "test hazırla", "deneme hazırla"]
-    image_triggers = ["görsel çiz", "resim çiz", "görsel oluştur", "resim oluştur", "fotoğraf", "resmini yap", "görselini yap", "diyagram"]
+    
+    # Her türlü görsel/resim isteğini yakalayacak kelime havuzu (Örn: "futbol maçı resmi oluştur", "araba resmi yap", "görsel çiz", vb.)
+    image_keywords = ["görsel", "resim", "fotoğraf", "çiz", "yap", "oluştur", "tasarla", "portre", "manzara"]
     
     is_question_intent = any(t in user_query_lower for t in question_triggers)
-    is_image_intent = any(t in user_query_lower for t in image_triggers) and not is_question_intent
+    
+    # Kullanıcı soru istemiyorsa ve yukarıdaki anahtar kelimelerden herhangi biri geçiyorsa görsel üretimine yönlendir
+    is_image_intent = (not is_question_intent) and any(kw in user_query_lower for kw in image_keywords)
 
     # 1. DURUM: KULLANICI SORU HAZIRLAMASINI İSTİYOR
     if is_question_intent:
@@ -369,9 +373,9 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
             st.rerun() 
 
-    # 2. DURUM: KULLANICI SADECE RESİM / GÖRSEL ÇİZDİRMEK İSTİYOR
+    # 2. DURUM: KULLANICI HERHANGİ BİR GÖRSEL / RESİM İSTİYOR
     elif is_image_intent:
-        # İstenen mavi neon sakin ışıklarda V3.0 medya motoru mesajı
+        # İstediğin mavi neon sakin renk/aydınlatma animasyonlu mesaj
         st.markdown("""
         <div class="neon-loading-box">
             ✨ Mavi neon sakin ışıklarda V3.0 medya motoru, görseli hazırlıyor...
@@ -381,10 +385,12 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         
         with st.spinner("⏳ Görsel işleniyor..."):
             prompt_instruction = (
-                "Sen dünya standartlarında profesyonel bir AI Görsel Prompt Mühendisisin. Görevin, kullanıcının isteğini en yüksek kalitede, estetik ve detaylı bir İngilizce görsel promptuna (tasvirine) dönüştürmek.\n"
+                "Sen dünya standartlarında profesyonel bir AI Görsel Prompt ve Ultra Detaylı Kalite Mühendisisin. "
+                "Görevin, kullanıcının isteğini en yüksek kalitede, ultra gerçekçi, sinematik, kusursuz detaylara sahip ve profesyonel bir İngilizce görsel promptuna dönüştürmek.\n"
                 "KURALLAR:\n"
-                "1. Çıktı olarak ASLA bir senaryo, açıklama, giriş veya sohbet metni yazma.\n"
-                "2. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON FORMATINDA OLMALIDIR: {\"prompt\": \"Buraya son derece detaylı, sinematik, yüksek kaliteli İngilizce görsel promptunu yaz\"}"
+                "1. Promptun içine mutlaka kalite artırıcı ifadeler ekle: 'masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting, sharp focus, hyper-detailed textures'.\n"
+                "2. Çıktı olarak ASLA bir senaryo, açıklama, giriş veya sohbet metni yazma.\n"
+                "3. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON FORMATINDA OLMALIDIR: {\"prompt\": \"Buraya son derece detaylı, sinematik, yüksek kaliteli İngilizce görsel promptunu yaz\"}"
             )
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
@@ -395,21 +401,22 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
                 if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
                 data = json.loads(cleaned_json.strip())
-                enhanced_prompt = data.get("prompt", "a beautiful high quality cinematic masterpiece, 8k resolution")
+                enhanced_prompt = data.get("prompt", "masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting")
             except Exception:
-                enhanced_prompt = user_query + ", highly detailed, cinematic lighting, 8k, photorealistic"
+                enhanced_prompt = user_query + ", masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting, sharp focus"
                 
             st.session_state.image_seed = random.randint(1, 99999999)
             encoded_prompt = urllib.parse.quote(enhanced_prompt)
-            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model=flux"
+            # Yüksek kaliteli ve detaylı görsel çıkışı için model parametresi
+            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=1280&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model=flux"
             
             try:
-                media_response = requests.get(final_image_url, timeout=40)
+                media_response = requests.get(final_image_url, timeout=50)
                 if media_response.status_code == 200:
                     raw_image_bytes = media_response.content
                     st.session_state.messages.append({
                         "role": "assistant", 
-                        "content": "İşte istediğin görsel hazır! 🎨", 
+                        "content": "İşte istediğin yüksek kaliteli görsel hazır! 🎨", 
                         "image_bytes": raw_image_bytes,
                         "is_composite": False
                     })

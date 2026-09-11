@@ -13,7 +13,7 @@ import io
 # --- SAYFA AYARLARI ---
 st.set_page_config(
     page_title="Eyx AI - Premium",
-    page_icon="",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -31,47 +31,39 @@ if "uploaded_file_data" not in st.session_state:
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
-# --- CSS VE STYLING (IOS OPTİMİZASYONLU PREMIUM UI, DOSYA SİLME & AŞAĞI OK ANİMASYONU) ---
+# --- CSS VE STYLING (HIZLI, STABİL, KASMASIZ UI) ---
 st.markdown("""
 <style>
     [data-testid="stChatInput"] textarea, .stTextInput input, textarea { font-size: 16px !important; -webkit-text-size-adjust: 100%; }
     [data-testid="stSidebar"] { border-right: 1px solid rgba(128, 128, 128, 0.15); background-color: #0f172a !important; }
-    .user-bubble { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
-    .ai-bubble { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); color: #f8fafc; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    .user-bubble { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
+    .ai-bubble { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); color: #f8fafc; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 10px rgba(139, 92, 246, 0.1); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
     
-    /* Mavi Neon Sakin Işık Efekti */
     .neon-loading-box {
         background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 58, 138, 0.85) 100%);
         color: #93c5fd;
-        padding: 16px 22px;
-        border-radius: 16px;
+        padding: 14px 20px;
+        border-radius: 14px;
         margin: 10px auto 10px 0;
         max-width: 85%;
-        border: 1px solid rgba(56, 189, 248, 0.6);
-        box-shadow: 0 0 25px rgba(37, 99, 235, 0.35), inset 0 0 12px rgba(56, 189, 248, 0.25);
+        border: 1px solid rgba(56, 189, 248, 0.5);
         font-family: 'Segoe UI', system-ui, sans-serif;
-        font-size: 1.05rem;
-        font-weight: 600;
+        font-size: 1rem;
+        font-weight: 500;
         display: flex;
         align-items: center;
-        animation: neonGlow 2s infinite alternate ease-in-out;
-    }
-    @keyframes neonGlow {
-        0% { box-shadow: 0 0 12px rgba(37, 99, 235, 0.3); border-color: rgba(56, 189, 248, 0.4); }
-        100% { box-shadow: 0 0 30px rgba(56, 189, 248, 0.7); border-color: rgba(56, 189, 248, 0.9); }
     }
 
     .logo-container { text-align: center; margin-bottom: 2px; padding: 5px; }
-    .brand-eymen { font-size: 3.5rem; font-weight: 900; color: #2563eb; text-shadow: 0 0 15px rgba(37, 99, 235, 0.3); }
-    .brand-v2 { font-size: 3.5rem; font-weight: 900; color: #38bdf8; text-shadow: 0 0 15px rgba(56, 189, 248, 0.4); margin-left: 10px; }
+    .brand-eymen { font-size: 3.5rem; font-weight: 900; color: #2563eb; }
+    .brand-v2 { font-size: 3.5rem; font-weight: 900; color: #38bdf8; margin-left: 10px; }
     .subtitle { color: #64748b; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 25px; }
     .typing-dots { display: inline-flex; align-items: center; margin-left: 8px; }
-    .dot { width: 7px; height: 7px; background-color: #38bdf8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+    .dot { width: 6px; height: 6px; background-color: #38bdf8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
     .dot:nth-child(1) { animation-delay: -0.32s; }
     .dot:nth-child(2) { animation-delay: -0.16s; }
     @keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
 
-    /* Yüklenen Dosya Önizleme Kutusu & Çarpı Butonu */
     .file-preview-card {
         position: relative;
         background: rgba(30, 41, 59, 0.7);
@@ -82,47 +74,18 @@ st.markdown("""
         align-items: center;
         gap: 10px;
         margin-bottom: 15px;
-        backdrop-filter: blur(5px);
     }
     .file-preview-text {
         color: #f8fafc;
         font-size: 0.95rem;
         font-family: 'Segoe UI', system-ui, sans-serif;
     }
-
-    /* Şeffaf Yuvarlak Aşağı Ok Butonu (En Alta Git) */
-    .scroll-bottom-btn {
-        position: fixed;
-        bottom: 90px;
-        right: 30px;
-        width: 45px;
-        height: 45px;
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(56, 189, 248, 0.4);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #38bdf8;
-        font-size: 1.2rem;
-        cursor: pointer;
-        z-index: 999;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
-    .scroll-bottom-btn:hover {
-        background: rgba(37, 99, 235, 0.8);
-        color: #ffffff;
-        transform: scale(1.08);
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Dünyanın En Gelişmiş Yapay Zeka & Akıllı Sentez Motoru</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Hızlı, Akıllı ve Doğrudan Asistan</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME (ÇARPI BUTONLU) ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -144,26 +107,18 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- ŞEFFAF YUVARLAK AŞAĞI OK (EN ALTA İNME) SCRIPTI ---
-st.markdown("""
-<a href="#bottom-anchor" class="scroll-bottom-btn" title="En Alta Git">↓</a>
-""", unsafe_allow_html=True)
-
-# --- DİNAMİK GEMİNI ÇAĞIRICI (HATASIZ & GÜVENLİ MODEL ENTEGRASYONU) ---
+# --- HIZLI GEMINI ÇAĞIRICI (Hatasız, Hafif ve Stabil) ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
-    son_hata = "Lütfen Streamlit ayarlarında (secrets) API key eklediğinden emin ol."
-    anahtar_bulundu = False
+    son_hata = "API anahtarı bulunamadı."
     
     for i in range(1, 11):
         key_adı = f"KEY_{i}"
         if key_adı in st.secrets:
-            anahtar_bulundu = True
             aktif_key = st.secrets[key_adı]
             try:
                 genai.configure(api_key=aktif_key)
-                # Kararlı ve hatasız model yapılandırması (bilinmeyen alan hatalarını önlemek için tools kaldırıldı)
                 model = genai.GenerativeModel(
-                    model_name="gemini-2.5-flash", 
+                    model_name="gemini-1.5-flash", 
                     system_instruction=sistem_talimati
                 )
                 
@@ -173,41 +128,31 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
                 else:
                     yanit = model.generate_content([görsel_parçası, sorgu]) if görsel_parçası else model.generate_content(sorgu)
                 
-                try: return yanit.text, True
-                except ValueError: return "Sistem uyarısı: Oluşturulan içerik boş döndü.", False
+                if yanit and yanit.text:
+                    return yanit.text, True
             except Exception as e:
-                err_str = str(e)
-                son_hata = err_str
-                if any(k in err_str for k in ["429", "Quota", "400", "expired", "API_KEY_INVALID"]): 
-                    continue 
-                else: 
-                    return f"Hata: {err_str}", False
-                    
-    if not anahtar_bulundu:
-        return son_hata, False
-        
-    return f"Bağlantı başarısız. Gelen son hata mesajı: {son_hata}", False
+                son_hata = str(e)
+                continue
+                
+    return f"Bağlantı hatası oluştu: {son_hata}", False
 
-# --- ALTERNATİF GÖRSEL ÜRETİCİ (POLLINATIONS YERİNE HIZLI STABİL ENDPOINT) ---
+# --- ALTERNATİF GÖRSEL ÜRETİCİ ---
 def alternatif_gorsel_uret(prompt_metni):
     try:
-        # Hugging Face / Pollinations bağımlılığından kaçınmak için kararlı bir görsel servis havuzu
         encoded_prompt = urllib.parse.quote(prompt_metni)
-        # Çoklu kararlı alternatif API linkleri
         servis_urleri = [
             f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={random.randint(1,999999)}",
             f"https://pollinations.ai/p/{encoded_prompt}?width=1024&height=1024&seed={random.randint(1,999999)}"
         ]
         for url in servis_urleri:
-            resp = requests.get(url, timeout=30)
+            resp = requests.get(url, timeout=25)
             if resp.status_code == 200 and len(resp.content) > 1000:
                 return resp.content, True
     except:
         pass
-        
     return None, False
 
-# --- DİNAMİK GÖRSEL SENTEZ MOTORU (A4 VE TÜRKÇE FONT DESTEĞİ) ---
+# --- DİNAMİK GÖRSEL SENTEZ MOTORU ---
 def tek_gorsel_olustur(diyagram_bytes, soru_metni):
     try:
         a4_width = 800
@@ -225,13 +170,7 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
         try:
             font = ImageFont.truetype(font_path, font_size)
         except:
-            font_paths = ["Arial.ttf", "arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
             font = ImageFont.load_default()
-            for path in font_paths:
-                try:
-                    font = ImageFont.truetype(path, font_size)
-                    break
-                except: continue
 
         diagram = Image.open(io.BytesIO(diyagram_bytes))
         diagram.thumbnail((500, 500), Image.Resampling.LANCZOS)
@@ -241,9 +180,7 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
         
         def get_text_width(t, f):
             try: return f.getlength(t)
-            except:
-                try: return f.getbbox(t)[2]
-                except: return len(t) * (font_size * 0.6)
+            except: return len(t) * (font_size * 0.6)
 
         lines = []
         temiz_metin = soru_metni.split("Detaylı Çözüm")[0].split("Çözüm:")[0].strip()
@@ -285,8 +222,7 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
         out_bytes = io.BytesIO()
         composite.save(out_bytes, format="PNG")
         return out_bytes.getvalue()
-    except Exception as e:
-        st.error(f"Sentez motoru hatası: {e}")
+    except Exception:
         return diyagram_bytes
 
 # --- SIDEBAR KONTROL PANELİ ---
@@ -314,12 +250,11 @@ with st.sidebar:
         
     st.write("---")
     
-    # --- AKILLI ARAÇ KUTUSU ---
-    st.markdown("<h3 style='color: #38bdf8; font-size: 1.2rem; margin-top:10px;'>🧰 Akıllı Araç Kutusu</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #38bdf8; font-size: 1.2rem; margin-top:10px;'>🧰 Araç Kutusu</h3>", unsafe_allow_html=True)
     
-    if st.button("🎲 Seed Yenile (Yeni Tarz)", use_container_width=True):
+    if st.button("🎲 Seed Yenile", use_container_width=True):
         st.session_state.image_seed = random.randint(1, 99999999)
-        st.success("Seed yenilendi! Yeni görseller farklı olacak.")
+        st.success("Seed yenilendi!")
         
     st.write("") 
     
@@ -331,30 +266,30 @@ with st.sidebar:
                 api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={encoded_url}"
                 st.image(api_url, caption="QR Kodunuz Hazır!")
             else:
-                st.warning("Lütfen bir metin girin.")
+                st.warning("Lütfen metin girin.")
 
     with st.expander("📝 Hızlı Soru Hazırlayıcı"):
-        hizli_sinav = st.selectbox("Sınav Seç", ["LGS", "YKS-TYT", "YKS-AYT", "Yazılı Sınav"])
-        hizli_ders = st.selectbox("Ders Seç", ["Matematik", "Fen Bilimleri", "Türkçe", "Tarih/İnkılap"])
-        hizli_konu = st.text_input("Soru Konusu (Örn: Kareköklü Sayılar)")
-        hizli_zorluk = st.selectbox("Zorluk Seviyesi", ["Kolay", "Orta", "Zor", "Ultra Zor (Yeni Nesil)"])
+        hizli_sinav = st.selectbox("Sınav Seç", ["LGS", "YKS-TYT", "YKS-AYT", "Yazılı"])
+        hizli_ders = st.selectbox("Ders Seç", ["Matematik", "Fen Bilimleri", "Türkçe", "Tarih"])
+        hizli_konu = st.text_input("Soru Konusu")
+        hizli_zorluk = st.selectbox("Zorluk", ["Kolay", "Orta", "Zor", "Yeni Nesil"])
         if st.button("Soruyu Üret", use_container_width=True):
             if hizli_konu:
-                oto_istek = f"{hizli_sinav} sınavı {hizli_ders} dersi {hizli_konu} konusu için {hizli_zorluk} seviyesinde görsel diyagram içeren yeni nesil mükemmel bir soru oluştur."
+                oto_istek = f"{hizli_sinav} {hizli_ders} dersi {hizli_konu} konusu için {hizli_zorluk} seviyesinde yeni nesil soru oluştur."
                 st.session_state.messages.append({"role": "user", "content": oto_istek})
                 st.rerun()
             else:
-                st.warning("Lütfen bir konu yazın.")
+                st.warning("Lütfen konu yazın.")
 
-    with st.expander("🔑 Şifre Oluşturucu"):
-        hane_sayisi = st.slider("Şifre Uzunluğu (Hane)", min_value=4, max_value=32, value=12)
-        if st.button("Güvenli Şifre Üret", use_container_width=True):
+    with st.expander("🔑 Şifre Üretici"):
+        hane_sayisi = st.slider("Uzunluk", min_value=4, max_value=32, value=12)
+        if st.button("Şifre Üret", use_container_width=True):
             karakterler = string.ascii_letters + string.digits + "!@#$%^&*"
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
     st.write("---")
-    st.info("🚀 EYX SUPREME INTELLECT ACTIVE")
+    st.info("🚀 EYX AI AKTİF")
 
 # --- MESAJLARI GÖSTERME ---
 for msg in st.session_state.messages:
@@ -362,16 +297,16 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         if msg.get("is_composite") and "image_bytes" in msg:
-            st.image(msg["image_bytes"], use_container_width=True, caption="Eyx AI - Soru Bankası Çıktısı")
+            st.image(msg["image_bytes"], use_container_width=True, caption="Eyx AI - Soru Çıktısı")
             st.download_button(
-                label="📥 Soruyu Tek Görsel Olarak İndir (PNG)",
+                label="📥 Soruyu İndir (PNG)",
                 data=msg["image_bytes"],
                 file_name="eyx_ai_soru.png",
                 mime="image/png",
                 use_container_width=True
             )
             if msg.get("content"):
-                with st.expander("🔑 Detaylı Çözüm ve Cevap Anahtarı (Panele Özel)"):
+                with st.expander("🔑 Çözüm ve Cevap Anahtarı"):
                     st.write(msg["content"])
         else:
             if "image_bytes" in msg:
@@ -380,7 +315,7 @@ for msg in st.session_state.messages:
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
 # --- ANA ETKİLEŞİM INPUTU ---
-if user_query := st.chat_input("Eyx AI'a bir şeyler sor..."):
+if user_query := st.chat_input("Bir şeyler sor..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
 # --- YANIT MOTORU ---
@@ -392,42 +327,33 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     for m in st.session_state.messages[:-1]:
         formatted_history.append({"role": "user" if m["role"] == "user" else "model", "parts": [m.get("content", "İstek.")]})
             
-    # AKILLI TETİKLEYİCİLER (INTENT ROUTING)
     question_triggers = ["soru oluştur", "soru yaz", "soru hazırla", "sorusu hazırla", "sorusu yaz", "sorusu oluştur", "test hazırla", "deneme hazırla"]
     image_keywords = ["görsel", "resim", "fotoğraf", "çiz", "yap", "oluştur", "tasarla", "portre", "manzara"]
     
     is_question_intent = any(t in user_query_lower for t in question_triggers)
     is_image_intent = (not is_question_intent) and any(kw in user_query_lower for kw in image_keywords)
 
-    # 1. DURUM: KULLANICI SORU HAZIRLAMASINI İSTİYOR
     if is_question_intent:
         st.markdown("""
-        <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2);">
-            ⏳ Eyx Eğitim Motoru Analiz Ediyor...
+        <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;">
+            ⏳ Soru hazırlanıyor...
             <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
         """, unsafe_allow_html=True)
         
-        with st.spinner("⏳ Eyx Soru Sentez Motoru Çalışıyor (A4 Formatı)..."):
+        with st.spinner("Soru sentezleniyor..."):
             prompt_instruction = (
-                "Sen dünyadaki tüm akademik verileri ve soru bankalarını kusursuz tarayan süper zeki bir yapay zekasın. "
-                "Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
+                "Kullanıcının isteğini analiz edip JSON döndür.\n"
                 "KURALLAR:\n"
-                "1. Görsel motorunun içine metin veya şık yazmasını KESİNLİKLE YASAKLA. Prompt'a mutlaka şunu ekle: 'pure mathematical vector diagram ONLY, strictly NO text, NO words, NO numbers, NO letters, minimalist educational style, isolated on white background'.\n"
-                "2. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A clean pure mathematical diagram...\"}"
+                "1. Görsel promptuna şunları ekle: 'pure mathematical vector diagram ONLY, strictly NO text, NO words, NO numbers, NO letters, minimalist educational style, isolated on white background'.\n"
+                "2. ÇIKTI SADECE GEÇERLİ BİR JSON OLMALIDIR: {\"is_new_subject\": true, \"prompt\": \"A clean pure mathematical diagram...\"}"
             )
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             metin_talimati = (
-                "Sen dünyanın en zeki, yazım yanlışlarını şak diye anlayan, ünlüleri, olayları ve her konuyu kusursuz bilen uzman bir öğretmen ve asistansın. "
-                "Kullanıcının yazdığı metindeki her türlü yazım yanlışını otomatik olarak düzeltip ne demek istediğini anla. Bilgileri kendi üstün hafızanla doğrudan, net ve eksiksiz bir şekilde yaz.\n\n"
-                "ŞIK DÜZENİ KURALLARI:\n"
-                "- Eğer şıklar yorum içeriyorsa veya uzun cümlelerse, şıkları MUTLAKA alt alta ve aralarında birer boş satır olacak şekilde yaz.\n"
-                "- Eğer şıklar matematikteki gibi sadece KISA SAYILAR veya harflerden oluşuyorsa, hepsini aynı satıra (yan yana), aralarında belirgin geniş boşluklar bırakarak yaz.\n\n"
-                "Çıktı Formatı:\n"
-                "1. Soru Hikayesi/Metni\n"
-                "2. Şıklar (yukarıdaki akıllı düzene göre)\n"
-                "3. Detaylı Çözüm ve Cevap. E şıkkını asla kullanma."
+                "Sen hızlı, pratik ve doğrudan yanıt veren bir yapay zeka asistanısın. "
+                "Yazım yanlışlarını otomatik düzeltip doğrudan net ve anlaşılır cevaplar ver. "
+                "Şıklar uzunsa alt alta, kısa sayılarsa yan yana yaz. Detaylı çözüm ve cevap ekle. E şıkkını kullanma."
             )
             soru_metni, _ = calistir_gemini(user_query, metin_talimati, geçmiş=formatted_history)
             
@@ -452,25 +378,24 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                     "is_composite": True
                 })
             else:
-                st.error("Görsel motoru yanıt vermedi.")
+                st.error("Görsel oluşturulamadı.")
                 st.session_state.messages.pop()
 
             st.rerun() 
 
-    # 2. DURUM: KULLANICI GÖRSEL / RESİM İSTİYOR
     elif is_image_intent:
         st.markdown("""
         <div class="neon-loading-box">
-            ✨ V3.0 medya motoru, görseli hazırlıyor...
+            ✨ Görsel hazırlanıyor...
             <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
         """, unsafe_allow_html=True)
         
         prompt_instruction = (
-            "Sen profesyonel bir AI Görsel Prompt Mühendisisin. Kullanıcının görsel isteğini en yüksek kalitedte, ultra gerçekçi, sinematik, kusursuz detaylara sahip bir İngilizce görsel promptuna dönüştür.\n"
+            "Kullanıcının görsel isteğini İngilizce prompta dönüştür.\n"
             "KURALLAR:\n"
-            "1. Promptun içine şu kalite ifadelerini mutlaka ekle: 'masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting, sharp focus, hyper-detailed textures'.\n"
-            "2. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR: {\"prompt\": \"Buraya detaylı İngilizce görsel promptunu yaz\"}"
+            "1. Kalite ifadeleri ekle: 'masterpiece, ultra-detailed, 8k resolution, photorealistic'.\n"
+            "2. ÇIKTI SADECE GEÇERLİ BİR JSON OLMALIDIR: {\"prompt\": \"...\"}"
         )
         ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
         
@@ -481,32 +406,32 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
             if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
             data = json.loads(cleaned_json.strip())
-            enhanced_prompt = data.get("prompt", "masterpiece, ultra-detailed, 8k resolution, photorealistic")
+            enhanced_prompt = data.get("prompt", "masterpiece, ultra-detailed, 8k resolution")
         except Exception:
-            enhanced_prompt = user_query + ", masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting"
+            enhanced_prompt = user_query + ", masterpiece, ultra-detailed, 8k resolution"
             
         raw_image_bytes, img_success = alternatif_gorsel_uret(enhanced_prompt)
         
         if img_success and raw_image_bytes:
             st.session_state.messages.append({
                 "role": "assistant", 
-                "content": "İşte istediğin yüksek kaliteli görsel hazır! 🎨", 
+                "content": "İşte görselin hazır! 🎨", 
                 "image_bytes": raw_image_bytes,
                 "is_composite": False
             })
         else:
-            st.error("Görsel motoru yanıt vermedi.")
+            st.error("Görsel oluşturulamadı.")
             st.session_state.messages.pop()
 
         st.rerun()
             
-    # 3. DURUM: GENEL SOHBET / BİLGİ / YAZIM YANLIŞI DÜZELTME
     else:
-        with st.spinner("Eyx AI düşünüyor..."):
+        with st.spinner("Yanıtlanıyor..."):
             system_instruction = (
-                "Sen dünyanın en zeki, her şeyi bilen, yazım yanlışlarını anında çözüp ne demek istendiğini kavrayan süper zeki bir yapay zeka asistanısın. "
-                "Eymen (Mertcan) tarafından geliştirildin. Ünlüleri, bilim insanlarını, oyunları, tarihi, güncel olayları ve her türlü bilgiyi eksiksiz bilirsin. "
-                "Kendi üstün hafızan ve bilgîn ile doğrudan, kusursuz ve akıcı bir Türkçe ile yanıt ver."
+                "Sen hızlı, pratik ve doğrudan bilgi veren bir yapay zeka asistanısın. "
+                "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
+                "Gereksiz övgüler, 'ben süper zekiyim' gibi iddialı veya süslü laflar ASLA etme. "
+                "Google araması yapıldı veya benzeri ifadeler kullanma. Doğrudan net, sade ve anlaşılır bir Türkçe ile yanıt ver."
             )
             görsel_parçası = None
             if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):
@@ -520,9 +445,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 st.session_state.messages.append({"role": "assistant", "content": ai_response})
                 st.rerun() 
 
-# --- SAYFA SONU İÇİN ANCHOR (AŞAĞI OK İÇİN HEDEF) ---
-st.markdown('<div id="bottom-anchor"></div>', unsafe_allow_html=True)
-
 # --- ALT BİLGİ ---
 st.write("---")
-st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem; font-weight: 500;'>Eyx AI © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem;'>Eyx AI © 2026</p>", unsafe_allow_html=True)

@@ -12,8 +12,8 @@ import io
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - Premium",
-    page_icon="🤖",
+    page_title="Eyx AI - v3.0",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -118,7 +118,7 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
             try:
                 genai.configure(api_key=aktif_key)
                 model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash", 
+                    model_name="gemini-3.5-flash", 
                     system_instruction=sistem_talimati
                 )
                 

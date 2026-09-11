@@ -3,17 +3,17 @@
   "name": "Eyx AI",
   "icons": [
     {
-      "src": "favicon_512.png",
+      "src": "https://raw.githubusercontent.com/eymenaraz/Eymen.AI/main/static/icon.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
   "start_url": "https://eymenai.streamlit.app",
   "display": "fullscreen",
-  "theme_color": "#2b2525",
-  "background_color": "#000000",
-  "id": "1",
-  "description": "Eyx AI, hızlı ve zeki yapay zeka asistanın...",
+  "theme_color": "#1f1e1b",
+  "background_color": "#120e0e",
+  "id": "Eyx AI",
+  "description": "Eyx AI,hızlı ve zeki yapay zeka asistanın...",
   "dir": "auto",
   "scope": "https://eymenai.streamlit.app",
   "lang": "tr",
@@ -23,4 +23,3 @@
     "window-controls-overlay"
   ]
 }
-"src": "icon.png"

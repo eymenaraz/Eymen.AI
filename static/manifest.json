@@ -1,1 +1,22 @@
+{
+  "short_name": "Eyx AI",
+  "name": "Eyx AI",
+  "icons": [
+    {
+      "src": "https://eymenai.streamlit.app/favicon_512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "https://eymenai.streamlit.app",
+  "display": "fullscreen",
+  "theme_color": "#445974",
+  "background_color": "#2b2121",
+  "id": "Eyx AI",
+  "description": "Eyx AI, hızlı ve zeki asistanın...",
+  "lang": "tr",
+  "scope": "https://eymenai.streamlit.app",
+  "dir": "auto",
+  "orientation": "any"
+}
 

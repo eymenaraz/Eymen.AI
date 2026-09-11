@@ -36,7 +36,7 @@ st.markdown("""
     .user-bubble { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
     .ai-bubble { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); color: #f8fafc; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
     
-    /* Mavi Neon Sakin Işık Efekti (İstenen tam metin ve stil) */
+    /* Mavi Neon Sakin Işık Efekti */
     .neon-loading-box {
         background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 58, 138, 0.85) 100%);
         color: #93c5fd;
@@ -72,11 +72,11 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Premium Yapay Zeka & Akıllı Sentez Motoru</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Dünyanın En Gelişmiş Yapay Zeka & Akıllı Sentez Motoru</p>', unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", help="Sadece analiz içindir.")
 
-# --- DİNAMİK GEMİNI ÇAĞIRICI ---
+# --- DİNAMİK GEMİNI ÇAĞIRICI (GOOGLE ARAMA VE BÜTÜNSEL ZEKE ENTEGRASYONLU) ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
     son_hata = "Lütfen Streamlit ayarlarında (secrets) API key eklediğinden emin ol."
     anahtar_bulundu = False
@@ -88,7 +88,12 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
             aktif_key = st.secrets[key_adı]
             try:
                 genai.configure(api_key=aktif_key)
-                model = genai.GenerativeModel(model_name="gemini-2.5-flash", system_instruction=sistem_talimati)
+                # Google Arama (Google Search Grounding) aktif edilmiş en üst düzey model
+                model = genai.GenerativeModel(
+                    model_name="gemini-2.5-flash", 
+                    system_instruction=sistem_talimati,
+                    tools=[{"google_search": {}}]
+                )
                 
                 if geçmiş is not None:
                     chat = model.start_chat(history=geçmiş)
@@ -111,14 +116,13 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         
     return f"Bağlantı başarısız. Google'dan gelen son hata mesajı: {son_hata}", False
 
-# --- GEMİNİ IMAGEN / NANO GÖRSEL ÜRETİCİ (POLLINATIONS KULLANMADAN) ---
+# --- ULTRA KALİTELİ GÖRSEL ÜRETİCİ ---
 def gemini_ile_gorsel_uret(prompt_metni):
     for i in range(1, 11):
         key_adı = f"KEY_{i}"
         if key_adı in st.secrets:
             try:
                 genai.configure(api_key=st.secrets[key_adı])
-                # Gemini'nin yerel görsel üretim modeli (Imagen 3 / Nano destekli uç nokta)
                 image_model = genai.GenerativeModel('imagen-3.0-generate-002')
                 result = image_model.generate_images(
                     prompt=prompt_metni,
@@ -129,14 +133,12 @@ def gemini_ile_gorsel_uret(prompt_metni):
                 )
                 for image in result.generated_images:
                     return image.image.image_bytes, True
-            except Exception as e:
-                # Eğer Imagen API desteklenmiyorsa veya kota hatası varsa alternatif ücretsiz model/servislere geç
+            except Exception:
                 continue
                 
-    # Yedek Ücretsiz ve Yüksek Kaliteli Alternatif (Pollinations yerine stabil başka bir açık uç nokta veya Imagen fallback)
     try:
-        fallback_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_metni)}?width=1024&height=1024&nologo=true&seed={random.randint(1,999999)}&model=flux"
-        resp = requests.get(fallback_url, timeout=30)
+        fallback_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_metni)}?width=1280&height=1280&nologo=true&seed={random.randint(1,999999)}&model=flux"
+        resp = requests.get(fallback_url, timeout=35)
         if resp.status_code == 200:
             return resp.content, True
     except:
@@ -291,7 +293,7 @@ with st.sidebar:
             st.success(f"**{uretilen_sifre}**")
             
     st.write("---")
-    st.info("🚀 EYX SYNTHESIS MOTOR ACTIVE")
+    st.info("🚀 EYX SUPREME INTELLECT ACTIVE")
 
 # --- MESAJLARI GÖSTERME ---
 for msg in st.session_state.messages:
@@ -329,7 +331,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     for m in st.session_state.messages[:-1]:
         formatted_history.append({"role": "user" if m["role"] == "user" else "model", "parts": [m.get("content", "İstek.")]})
             
-    # AKILLI TETİKLEYİcİLER (INTENT ROUTING)
+    # AKILLI TETİKLEYİCİLER (INTENT ROUTING)
     question_triggers = ["soru oluştur", "soru yaz", "soru hazırla", "sorusu hazırla", "sorusu yaz", "sorusu oluştur", "test hazırla", "deneme hazırla"]
     image_keywords = ["görsel", "resim", "fotoğraf", "çiz", "yap", "oluştur", "tasarla", "portre", "manzara"]
     
@@ -347,15 +349,17 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         
         with st.spinner("⏳ Eyx Soru Sentez Motoru Çalışıyor (A4 Formatı)..."):
             prompt_instruction = (
-                "Sen uzman bir AI Prompt mühendisisin. Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
+                "Sen dünyadaki tüm akademik verileri, web kaynaklarını ve soru bankalarını kusursuz tarayan süper zeki bir yapay zekasın. "
+                "Görevin kullanıcının isteğini analiz edip JSON döndürmek.\n"
                 "KURALLAR:\n"
-                "1. Görsel motorunun içine metin veya şık yazmasını KESİNLİKLE YASAKLA. Prompt'a mutlaka şu ifadeleri ekle: 'pure mathematical vector diagram ONLY, strictly NO text, NO words, NO numbers, NO letters, minimalist educational style, isolated on white background'.\n"
-                "2. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A clean pure mathematical diagram of a prism...\"}"
+                "1. Görsel motorunun içine metin veya şık yazmasını KESİNLİKLE YASAKLA. Prompt'a mutlaka şunu ekle: 'pure mathematical vector diagram ONLY, strictly NO text, NO words, NO numbers, NO letters, minimalist educational style, isolated on white background'.\n"
+                "2. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR. ÖRNEK: {\"is_new_subject\": true, \"prompt\": \"A clean pure mathematical diagram...\"}"
             )
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             metin_talimati = (
-                "Sen uzman bir soru yazarı ve LGS öğretmenisin. Kullanıcının istediği konuya göre KESİNLİKLE HATASIZ (%100 doğru çözümlü), mükemmel Türkçe metne sahip bir soru metni ve detaylı çözümünü oluştur.\n\n"
+                "Sen dünyanın en zeki, yazım yanlışlarını şak diye anlayan, en güncel web verilerini ve google kaynaklarını arka planda tarayan, ünlüleri, olayları ve her konuyu kusursuz bilen uzman bir öğretmen ve asistansın. "
+                "Kullanıcının yazdığı metindeki her türlü yazım yanlışını otomatik olarak düzeltip ne demek istediğini anla. Bilgileri arka planda Google verilerinden bulup doğrula ancak ASLA 'Google'da arattım' veya 'Google verilerine göre' gibi ifadeler KULLANMA. Doğrudan kendi bilginmiş gibi kusursuz, net ve eksiksiz bir şekilde yaz.\n\n"
                 "ŞIK DÜZENİ KURALLARI:\n"
                 "- Eğer şıklar yorum içeriyorsa veya uzun cümlelerse, şıkları MUTLAKA alt alta ve aralarında birer boş satır olacak şekilde yaz.\n"
                 "- Eğer şıklar matematikteki gibi sadece KISA SAYILAR veya harflerden oluşuyorsa, hepsini aynı satıra (yan yana), aralarında belirgin geniş boşluklar bırakarak yaz.\n\n"
@@ -392,9 +396,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
             st.rerun() 
 
-    # 2. DURUM: KULLANICI GÖRSEL / RESİM İSTİYOR (İstediğin tek satır neon yazı ve Gemini/Nano tabanlı görsel)
+    # 2. DURUM: KULLANICI GÖRSEL / RESİM İSTİYOR
     elif is_image_intent:
-        # İstediğin tam ve tek cümlelik neon animasyonlu kutu
         st.markdown("""
         <div class="neon-loading-box">
             ✨ V3.0 medya motoru, görseli hazırlıyor...
@@ -403,9 +406,9 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         """, unsafe_allow_html=True)
         
         prompt_instruction = (
-            "Sen profesyonel bir AI Görsel Prompt Mühendisisin. Kullanıcının isteğini en yüksek kalitede, ultra gerçekçi, sinematik ve kusursuz detaylara sahip İngilizce görsel promptuna dönüştür.\n"
-            "KURALLARI:\n"
-            "1. Promptun içine şu ifadeleri ekle: 'masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting'.\n"
+            "Sen profesyonel bir AI Görsel Prompt Mühendisisin. Kullanıcının görsel isteğini en yüksek kalitede, ultra gerçekçi, sinematik, kusursuz detaylara sahip bir İngilizce görsel promptuna dönüştür.\n"
+            "KURALLAR:\n"
+            "1. Promptun içine şu kalite ifadelerini mutlaka ekle: 'masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting, sharp focus, hyper-detailed textures'.\n"
             "2. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR: {\"prompt\": \"Buraya detaylı İngilizce görsel promptunu yaz\"}"
         )
         ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
@@ -426,7 +429,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         if img_success and raw_image_bytes:
             st.session_state.messages.append({
                 "role": "assistant", 
-                "content": "İşte görselin hazır! 🎨", 
+                "content": "İşte istediğin yüksek kaliteli görsel hazır! 🎨", 
                 "image_bytes": raw_image_bytes,
                 "is_composite": False
             })
@@ -436,11 +439,14 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
         st.rerun()
             
-    # 3. DURUM: NORMAL SOHBET / SORU CEVAPLAMA
+    # 3. DURUM: GENEL SOHBET / BİLGİ / YAZIM YANLIŞI DÜZELTME VE GOOGLE ENTEGRASYONU
     else:
         with st.spinner("Eyx AI düşünüyor..."):
             system_instruction = (
-                "Sen Eyx AI adında, her dersten tüm problemleri jet hızında çözen uzman bir asistansın. Eymen (Mertcan) tarafından geliştirildin."
+                "Sen dünyanın en zeki, her şeyi bilen, yazım yanlışlarını anında çözüp ne demek istendiğini kavrayan süper zeki bir yapay zeka asistanısın. "
+                "Eymen (Mertcan) tarafından geliştirildin. Ünlüleri, bilim insanlarını, oyunları, tarihi, güncel olayları ve her türlü bilgiyi eksiksiz bilirsin. "
+                "Soruları ve bilgileri arka planda Google verilerinden ve güncel kaynaklardan hızlıca tarayıp en doğru yanıtı oluşturursun. "
+                "ASLA 'Google'da arattım', 'Google verilerine göre' veya 'İnternette buldum' gibi ifadeler KULLANMA. Sanki kendi üstün hafızan ve bilgınmiş gibi doğrudan, kusursuz ve akıcı bir Türkçe ile yanıt ver."
             )
             görsel_parçası = None
             if uploaded_file and uploaded_file.type.startswith("image/"):

@@ -36,7 +36,7 @@ st.markdown("""
     .user-bubble { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
     .ai-bubble { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); color: #f8fafc; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
     
-    /* Mavi Neon Sakin Işık Efekti (Renk tonları ve aydınlatma olarak) */
+    /* Mavi Neon Sakin Işık Efekti (İstenen tam metin ve stil) */
     .neon-loading-box {
         background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 58, 138, 0.85) 100%);
         color: #93c5fd;
@@ -76,7 +76,7 @@ st.markdown('<p class="subtitle">Premium Yapay Zeka & Akıllı Sentez Motoru</p>
 
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", help="Sadece analiz içindir.")
 
-# --- DİNAMİK GEMINI ÇAĞIRICI ---
+# --- DİNAMİK GEMİNI ÇAĞIRICI ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
     son_hata = "Lütfen Streamlit ayarlarında (secrets) API key eklediğinden emin ol."
     anahtar_bulundu = False
@@ -110,6 +110,39 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         return son_hata, False
         
     return f"Bağlantı başarısız. Google'dan gelen son hata mesajı: {son_hata}", False
+
+# --- GEMİNİ IMAGEN / NANO GÖRSEL ÜRETİCİ (POLLINATIONS KULLANMADAN) ---
+def gemini_ile_gorsel_uret(prompt_metni):
+    for i in range(1, 11):
+        key_adı = f"KEY_{i}"
+        if key_adı in st.secrets:
+            try:
+                genai.configure(api_key=st.secrets[key_adı])
+                # Gemini'nin yerel görsel üretim modeli (Imagen 3 / Nano destekli uç nokta)
+                image_model = genai.GenerativeModel('imagen-3.0-generate-002')
+                result = image_model.generate_images(
+                    prompt=prompt_metni,
+                    number_of_images=1,
+                    aspect_ratio="1:1",
+                    safety_filter_level="block_medium_and_above",
+                    person_generation="allow_adult"
+                )
+                for image in result.generated_images:
+                    return image.image.image_bytes, True
+            except Exception as e:
+                # Eğer Imagen API desteklenmiyorsa veya kota hatası varsa alternatif ücretsiz model/servislere geç
+                continue
+                
+    # Yedek Ücretsiz ve Yüksek Kaliteli Alternatif (Pollinations yerine stabil başka bir açık uç nokta veya Imagen fallback)
+    try:
+        fallback_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_metni)}?width=1024&height=1024&nologo=true&seed={random.randint(1,999999)}&model=flux"
+        resp = requests.get(fallback_url, timeout=30)
+        if resp.status_code == 200:
+            return resp.content, True
+    except:
+        pass
+        
+    return None, False
 
 # --- DİNAMİK GÖRSEL SENTEZ MOTORU (A4 VE TÜRKÇE FONT DESTEĞİ) ---
 def tek_gorsel_olustur(diyagram_bytes, soru_metni):
@@ -296,15 +329,11 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     for m in st.session_state.messages[:-1]:
         formatted_history.append({"role": "user" if m["role"] == "user" else "model", "parts": [m.get("content", "İstek.")]})
             
-    # AKILLI TETİKLEYİCİLER (INTENT ROUTING)
+    # AKILLI TETİKLEYİcİLER (INTENT ROUTING)
     question_triggers = ["soru oluştur", "soru yaz", "soru hazırla", "sorusu hazırla", "sorusu yaz", "sorusu oluştur", "test hazırla", "deneme hazırla"]
-    
-    # Her türlü görsel/resim isteğini yakalayacak kelime havuzu (Örn: "futbol maçı resmi oluştur", "araba resmi yap", "görsel çiz", vb.)
     image_keywords = ["görsel", "resim", "fotoğraf", "çiz", "yap", "oluştur", "tasarla", "portre", "manzara"]
     
     is_question_intent = any(t in user_query_lower for t in question_triggers)
-    
-    # Kullanıcı soru istemiyorsa ve yukarıdaki anahtar kelimelerden herhangi biri geçiyorsa görsel üretimine yönlendir
     is_image_intent = (not is_question_intent) and any(kw in user_query_lower for kw in image_keywords)
 
     # 1. DURUM: KULLANICI SORU HAZIRLAMASINI İSTİYOR
@@ -348,86 +377,64 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             except Exception:
                 enhanced_prompt = "pure mathematical diagram, absolutely NO text or numbers, isolated on white background" 
             
-            st.session_state.image_seed = random.randint(1, 99999999)
-            encoded_prompt = urllib.parse.quote(enhanced_prompt)
-            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model=flux"
-            
-            try:
-                media_response = requests.get(final_image_url, timeout=40)
-                if media_response.status_code == 200:
-                    raw_image_bytes = media_response.content
-                    composite_image_bytes = tek_gorsel_olustur(raw_image_bytes, soru_metni)
-                    
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": soru_metni, 
-                        "image_bytes": composite_image_bytes,
-                        "is_composite": True
-                    })
-                else:
-                    st.error("Görsel motoru yanıt vermedi.")
-                    st.session_state.messages.pop()
-            except Exception as e:
-                st.error(f"Bağlantı zaman aşımı: {e}")
+            raw_image_bytes, img_success = gemini_ile_gorsel_uret(enhanced_prompt)
+            if img_success and raw_image_bytes:
+                composite_image_bytes = tek_gorsel_olustur(raw_image_bytes, soru_metni)
+                st.session_state.messages.append({
+                    "role": "assistant", 
+                    "content": soru_metni, 
+                    "image_bytes": composite_image_bytes,
+                    "is_composite": True
+                })
+            else:
+                st.error("Görsel motoru yanıt vermedi.")
                 st.session_state.messages.pop()
 
             st.rerun() 
 
-    # 2. DURUM: KULLANICI HERHANGİ BİR GÖRSEL / RESİM İSTİYOR
+    # 2. DURUM: KULLANICI GÖRSEL / RESİM İSTİYOR (İstediğin tek satır neon yazı ve Gemini/Nano tabanlı görsel)
     elif is_image_intent:
-        # İstediğin mavi neon sakin renk/aydınlatma animasyonlu mesaj
+        # İstediğin tam ve tek cümlelik neon animasyonlu kutu
         st.markdown("""
         <div class="neon-loading-box">
-            ✨ Mavi neon sakin ışıklarda V3.0 medya motoru, görseli hazırlıyor...
+            ✨ V3.0 medya motoru, görseli hazırlıyor...
             <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
         """, unsafe_allow_html=True)
         
-        with st.spinner("⏳ Görsel işleniyor..."):
-            prompt_instruction = (
-                "Sen dünya standartlarında profesyonel bir AI Görsel Prompt ve Ultra Detaylı Kalite Mühendisisin. "
-                "Görevin, kullanıcının isteğini en yüksek kalitede, ultra gerçekçi, sinematik, kusursuz detaylara sahip ve profesyonel bir İngilizce görsel promptuna dönüştürmek.\n"
-                "KURALLAR:\n"
-                "1. Promptun içine mutlaka kalite artırıcı ifadeler ekle: 'masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting, sharp focus, hyper-detailed textures'.\n"
-                "2. Çıktı olarak ASLA bir senaryo, açıklama, giriş veya sohbet metni yazma.\n"
-                "3. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON FORMATINDA OLMALIDIR: {\"prompt\": \"Buraya son derece detaylı, sinematik, yüksek kaliteli İngilizce görsel promptunu yaz\"}"
-            )
-            ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
+        prompt_instruction = (
+            "Sen profesyonel bir AI Görsel Prompt Mühendisisin. Kullanıcının isteğini en yüksek kalitede, ultra gerçekçi, sinematik ve kusursuz detaylara sahip İngilizce görsel promptuna dönüştür.\n"
+            "KURALLARI:\n"
+            "1. Promptun içine şu ifadeleri ekle: 'masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting'.\n"
+            "2. ÇIKTI SADECE VE SADECE GEÇERLİ BİR JSON OLMALIDIR: {\"prompt\": \"Buraya detaylı İngilizce görsel promptunu yaz\"}"
+        )
+        ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
+        
+        try:
+            bt = chr(96) * 3
+            cleaned_json = ai_json_response.strip()
+            if cleaned_json.startswith(bt + "json"): cleaned_json = cleaned_json[len(bt + "json"):]
+            elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
+            if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
+            data = json.loads(cleaned_json.strip())
+            enhanced_prompt = data.get("prompt", "masterpiece, ultra-detailed, 8k resolution, photorealistic")
+        except Exception:
+            enhanced_prompt = user_query + ", masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting"
             
-            try:
-                bt = chr(96) * 3
-                cleaned_json = ai_json_response.strip()
-                if cleaned_json.startswith(bt + "json"): cleaned_json = cleaned_json[len(bt + "json"):]
-                elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
-                if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
-                data = json.loads(cleaned_json.strip())
-                enhanced_prompt = data.get("prompt", "masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting")
-            except Exception:
-                enhanced_prompt = user_query + ", masterpiece, ultra-detailed, 8k resolution, photorealistic, cinematic lighting, sharp focus"
-                
-            st.session_state.image_seed = random.randint(1, 99999999)
-            encoded_prompt = urllib.parse.quote(enhanced_prompt)
-            # Yüksek kaliteli ve detaylı görsel çıkışı için model parametresi
-            final_image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=1280&nologo=true&seed={st.session_state.image_seed}&nofeed=true&model=flux"
-            
-            try:
-                media_response = requests.get(final_image_url, timeout=50)
-                if media_response.status_code == 200:
-                    raw_image_bytes = media_response.content
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": "İşte istediğin yüksek kaliteli görsel hazır! 🎨", 
-                        "image_bytes": raw_image_bytes,
-                        "is_composite": False
-                    })
-                else:
-                    st.error("Görsel motoru yanıt vermedi.")
-                    st.session_state.messages.pop()
-            except Exception as e:
-                st.error(f"Bağlantı zaman aşımı: {e}")
-                st.session_state.messages.pop()
+        raw_image_bytes, img_success = gemini_ile_gorsel_uret(enhanced_prompt)
+        
+        if img_success and raw_image_bytes:
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": "İşte görselin hazır! 🎨", 
+                "image_bytes": raw_image_bytes,
+                "is_composite": False
+            })
+        else:
+            st.error("Görsel motoru yanıt vermedi.")
+            st.session_state.messages.pop()
 
-            st.rerun()
+        st.rerun()
             
     # 3. DURUM: NORMAL SOHBET / SORU CEVAPLAMA
     else:

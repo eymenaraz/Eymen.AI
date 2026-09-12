@@ -489,7 +489,7 @@ with st.sidebar:
             st.session_state.user_permissions = []
             st.rerun()
     else:
-        st.markdown("<p style='font-size: 0.85rem; opacity: 0.7;'>Sohbetleri senkronize etmek ve cihaz yetkileri vermek için Google hesabınızı bağlayın.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 0.85rem; opacity: 0.7;'>Google hesabınızı girerek Eyx AI sistemine bağlanın.</p>", unsafe_allow_html=True)
         
         # Resmi Google Logolu HTML Buton Görseli
         st.markdown(f"""
@@ -499,19 +499,17 @@ with st.sidebar:
             </div>
         """, unsafe_allow_html=True)
         
-        # Seçilebilir Google Hesapları Simülasyonu
-        secilen_eposta = st.selectbox(
-            "Cihazdaki E-postalar:", 
-            ["Hesap Seçiniz...", "mertcan.ornek@gmail.com", "eyx.ai.studio@gmail.com", "diger.hesap@gmail.com"],
-            label_visibility="collapsed"
-        )
+        # Sahte e-postalar yerine kullanıcının kendi e-postasını temizce girebilmesi için input
+        girilen_eposta = st.text_input("E-posta Adresiniz:", placeholder="ornek@gmail.com", label_visibility="collapsed")
         
-        if secilen_eposta != "Hesap Seçiniz...":
-            if st.button("Seçilen Hesapla Bağlan", use_container_width=True):
-                st.session_state.user_email = secilen_eposta
+        if st.button("Google ile Bağlan", use_container_width=True):
+            if girilen_eposta and "@" in girilen_eposta:
+                st.session_state.user_email = girilen_eposta.strip()
                 st.session_state.user_permissions = ["gmail", "photos"]
-                st.success(f"{secilen_eposta} başarıyla bağlandı!")
+                st.success(f"{st.session_state.user_email} başarıyla bağlandı!")
                 st.rerun()
+            else:
+                st.error("Lütfen geçerli bir e-posta adresi girin.")
 
     st.write("---")
     st.markdown("<b style='font-size: 1.05rem;'>💬 Sohbet Sekmeleri</b>", unsafe_allow_html=True)

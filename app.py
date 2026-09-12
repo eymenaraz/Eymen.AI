@@ -6,6 +6,7 @@ import os
 import random
 import string
 import requests
+import time
 from PIL import Image, ImageDraw, ImageFont
 import io
 from datetime import datetime
@@ -21,10 +22,32 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- SOHBET VE MOTOR HAFIZASI ---
+# --- KALICI HAFIZA & STATE YÖNETİMİ ---
 if "chats" not in st.session_state:
-    st.session_state.chats = {"Sohbet 1": []}
-    st.session_state.current_chat = "Sohbet 1"
+    st.session_state.chats = {
+        "Genel Sohbet": [],
+        "Kodlama Asistanı": [],
+        "Yaratıcı Yazar": [],
+        "Kişisel Zeka": []
+    }
+
+if "current_chat" not in st.session_state:
+    st.session_state.current_chat = "Genel Sohbet"
+
+if "chat_personalities" not in st.session_state:
+    st.session_state.chat_personalities = {
+        "Genel Sohbet": "Sen yardımsever ve net bir yapay zeka asistanısın.",
+        "Kodlama Asistanı": "Sen kıdemli bir yazılım mühendisisin. Sadece temiz, optimize kodlar yazarsın ve teknik çözümler sunarsın.",
+        "Yaratıcı Yazar": "Sen yaratıcı bir edebiyatçısın. Şiirli, akıcı, hikayeleştirici ve etkileyici bir dille konuşursun.",
+        "Kişisel Zeka": "Sen kullanıcının özel olarak yapılandırdığı kişisel yapay zekasısın."
+    }
+
+if "bg_settings" not in st.session_state:
+    st.session_state.bg_settings = {
+        "chat_bg": "#14151a",
+        "bubble_ai": "linear-gradient(135deg, rgba(30, 31, 38, 0.9) 0%, rgba(20, 21, 26, 0.9) 100%)",
+        "text_color": "#e2e8f0"
+    }
 
 if "image_seed" not in st.session_state:
     st.session_state.image_seed = random.randint(1, 99999999)
@@ -32,20 +55,37 @@ if "image_seed" not in st.session_state:
 if "uploaded_file_data" not in st.session_state:
     st.session_state.uploaded_file_data = None
 
-if "dynamic_persona_state" not in st.session_state:
-    st.session_state.dynamic_persona_state = "Standart Dengeli Asistan"
+GUNUN_SOZLERI = [
+    "🚀 Kodunu yaz, sınırları zorla, geleceği şekillendir.",
+    "💡 En iyi hata, henüz yapmadığın ve öğreneceğin hatadır.",
+    "⚡ Küçük adımlar büyük sistemleri inşa eder.",
+    "🔥 Vazgeçmediğin sürece yenilmiş sayılmazsın.",
+    "🎯 Bugün yazdığın her satır, yarınki gücündür."
+]
+
+if "gunun_sozu" not in st.session_state:
+    st.session_state.gunun_sozu = random.choice(GUNUN_SOZLERI)
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
-# --- CSS VE STYLING ---
-st.markdown("""
+# --- DİNAMİK CSS VE ÖZELLEŞTİRİLEBİLİR STİLLER ---
+current_bg = st.session_state.bg_settings["chat_bg"]
+current_bubble_ai = st.session_state.bg_settings["bubble_ai"]
+current_text_color = st.session_state.bg_settings["text_color"]
+
+st.markdown(f"""
 <style>
-    [data-testid="stChatInput"] textarea, .stTextInput input, textarea { font-size: 16px !important; -webkit-text-size-adjust: 100%; }
-    [data-testid="stSidebar"] { border-right: 1px solid rgba(128, 128, 128, 0.15); background-color: #121316 !important; }
-    .user-bubble { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
-    .ai-bubble { background: linear-gradient(135deg, rgba(30, 31, 38, 0.9) 0%, rgba(20, 21, 26, 0.9) 100%); color: #e2e8f0; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(129, 140, 248, 0.3); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
+    [data-testid="stChatInput"] textarea, .stTextInput input, textarea {{ font-size: 16px !important; -webkit-text-size-adjust: 100%; }}
+    [data-testid="stSidebar"] {{ border-right: 1px solid rgba(128, 128, 128, 0.15); background-color: #121316 !important; }}
     
-    .neon-loading-box {
+    .stApp {{
+        background-color: {current_bg} !important;
+    }}
+
+    .user-bubble {{ background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }}
+    .ai-bubble {{ background: {current_bubble_ai}; color: {current_text_color}; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(129, 140, 248, 0.3); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }}
+    
+    .neon-loading-box {{
         background: linear-gradient(135deg, rgba(20, 21, 26, 0.95) 0%, rgba(99, 102, 241, 0.25) 100%);
         color: #818cf8;
         padding: 14px 20px;
@@ -58,14 +98,31 @@ st.markdown("""
         font-weight: 500;
         display: flex;
         align-items: center;
-    }
+    }}
 
-    .logo-container { text-align: center; margin-bottom: 2px; padding: 5px; }
-    .brand-eyx { font-size: 3.5rem; font-weight: 900; color: #6366f1; }
-    .brand-ai { font-size: 3.5rem; font-weight: 900; color: #a5b4fc; margin-left: 10px; }
-    .subtitle { color: #94a3b8; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 25px; }
-    .typing-dots { display: inline-flex; align-items: center; margin-left: 8px; }
-    .dot { width: 6px; height: 6px; background-color: #818cf8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+    .welcome-banner {{
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(30, 31, 38, 0.8) 100%);
+        border: 1px solid rgba(129, 140, 248, 0.4);
+        padding: 12px 20px;
+        border-radius: 14px;
+        text-align: center;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1);
+    }}
+    .welcome-text {{
+        color: #c7d2fe;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+    }}
+
+    .logo-container {{ text-align: center; margin-bottom: 2px; padding: 5px; }}
+    .brand-eyx {{ font-size: 3.5rem; font-weight: 900; color: #6366f1; }}
+    .brand-ai {{ font-size: 3.5rem; font-weight: 900; color: #a5b4fc; margin-left: 10px; }}
+    .subtitle {{ color: #94a3b8; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 15px; }}
+    .typing-dots {{ display: inline-flex; align-items: center; margin-left: 8px; }}
+    .dot {{ width: 6px; height: 6px; background-color: #818cf8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }}
     .dot:nth-child(1) { animation-delay: -0.32s; }
     .dot:nth-child(2) { animation-delay: -0.16s; }
     @keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
@@ -85,11 +142,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- BAŞLIK ALANI ---
+# --- BAŞLIK VE KARIŞILAMA ---
 st.markdown('<div class="logo-container"><span class="brand-eyx">Eyx</span><span class="brand-ai">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">v3.15 - Universal API Key Rotation Studio</p>', unsafe_allow_html=True)
+st.markdown(f'<p class="subtitle">Aktif Sekme: <b>{st.session_state.current_chat}</b></p>', unsafe_allow_html=True)
 
-# --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
+st.markdown(f"""
+<div class="welcome-banner">
+    <div class="welcome-text">✨ <b>Günün Motivasyonu:</b> {st.session_state.gunun_sozu}</div>
+</div>
+""", unsafe_allow_html=True)
+
+# --- DOSYA YÜKLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
 
 if uploaded_file is not None:
@@ -109,7 +172,7 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- ARKA PLAN MOTORU (WEB ARAMA) ---
+# --- WEB ARAMA VE ZAMAN MOTORU ---
 def chrome_motoru_ile_ara(sorgu):
     try:
         sorgu_terimi = sorgu
@@ -150,7 +213,7 @@ def get_current_turkey_time():
     except:
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-# --- EVRENSEL VE DİREKT API ROTASYON MOTORU ---
+# --- API ROTASYON MOTORU ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
     son_hata = "Sistemde geçerli API anahtarı bulunamadı."
     an_zaman = get_current_turkey_time()
@@ -161,8 +224,8 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
     tam_sistem_talimati = (
         f"🚨 KESİN KURALLAR 🚨:\n"
         f"1. Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
-        f"2. Kullanıcı sana ne soruyorsa SADECE o konuya odaklan. Tek kelimelik veya kısa mesajlara sadece o kelimenin anlamıyla cevap ver, konuyu asla spora veya başka alakasız bir yere çekme.\n"
-        f"3. Bilgileri en güncel haliyle süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara veya linklere yönlendirme yapma.\n\n"
+        f"2. Kullanıcı sana ne soruyorsa SADECE o konuya odaklan. Tek kelimelik veya kısa mesajlara sadece o kelimenin anlamıyla cevap ver.\n"
+        f"3. Bilgileri en güncel haliyle süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara yönlendirme yapma.\n\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
 
@@ -192,32 +255,37 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         }
     }
 
-    # KEY_1'den KEY_20'ye kadar tüm formatları doğrudan REST API üzerinden dene
-    for i in range(1, 21):
-        key_adi = f"KEY_{i}"
-        if key_adi in st.secrets:
-            aktif_key = st.secrets[key_adi].strip()
-            if not aktif_key:
-                continue
-            
-            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={aktif_key}"
-            
-            try:
-                response = requests.post(endpoint, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
-                if response.status_code == 200:
-                    res_data = response.json()
-                    candidates = res_data.get("candidates", [])
-                    if candidates and len(candidates) > 0:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts and len(parts) > 0:
-                            return parts[0].get("text", ""), True
-                else:
-                    son_hata = f"KEY_{i} (Status {response.status_code}): {response.text}"
-            except Exception as e:
-                son_hata = f"KEY_{i} Bağlantı Hatası: {str(e)}"
-                continue
+    modeller = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
 
-    return f"Tüm API anahtarlarının kotası doldu veya bağlantı kurulamadı: {son_hata}", False
+    for model_adi in modeller:
+        for i in range(1, 21):
+            key_adi = f"KEY_{i}"
+            if key_adi in st.secrets:
+                aktif_key = st.secrets[key_adi].strip()
+                if not aktif_key:
+                    continue
+                
+                endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_adi}:generateContent?key={aktif_key}"
+                
+                try:
+                    response = requests.post(endpoint, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+                    
+                    if response.status_code == 200:
+                        res_data = response.json()
+                        candidates = res_data.get("candidates", [])
+                        if candidates and len(candidates) > 0:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            if parts and len(parts) > 0:
+                                return parts[0].get("text", ""), True
+                    elif response.status_code == 429:
+                        time.sleep(1.5)
+                        continue
+                    else:
+                        son_hata = f"KEY_{i} (Status {response.status_code}): {response.text}"
+                except Exception as e:
+                    continue
+
+    return "Tüm API anahtarlarının dakikalık istek kotası doldu. Lütfen 30 saniye bekleyip tekrar deneyin.", False
 
 def alternatif_gorsel_uret(prompt_metni):
     try:
@@ -306,100 +374,61 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
     except Exception:
         return diyagram_bytes
 
-# --- SIDEBAR KONTROL PANELİ ---
+# --- SIDEBAR & KİŞİSELLEŞTİRME MENÜSÜ ---
 with st.sidebar:
     st.markdown("<h2 style='color: #818cf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>⚡ Eyx AI Menü</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem;'>🎭 Konuşma Tarzı (Persona)</b>", unsafe_allow_html=True)
-    secilen_tarz = st.selectbox(
-        "Tarz Seç", 
-        [
-            "Dostane / Samimi (Kanka Modu)", 
-            "Sakin / Bilge ve Profesyonel", 
-            "Sinirli / Huysuz ve Sabırsız", 
-            "Heyecanlı / Hiperaktif", 
-            "Soğuk / Robotik ve Net"
-        ], 
-        label_visibility="collapsed"
-    )
-    
-    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem; margin-top: 15px; display: block;'>🗣️ Nöral Ses Tipi (İnsansı)</b>", unsafe_allow_html=True)
-    neural_ses = st.selectbox(
-        "Ses Seç", 
-        ["Emel (Doğal Kadın Sesi)", "Ahmet (Doğal Erkek Sesi)"], 
-        label_visibility="collapsed"
-    )
-    
-    # --- SESLİ KOMUT ÖZELLİĞİ ---
-    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem; margin-top: 15px; display: block;'>🎤 Sesli Komut</b>", unsafe_allow_html=True)
-    st.markdown("""
-        <script>
-        function startDictation() {
-            if (window.hasOwnProperty('webkitSpeechRecognition')) {
-                var recognition = new webkitSpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = false;
-                recognition.lang = "tr-TR";
-                recognition.start();
-                recognition.onresult = function(e) {
-                    document.querySelector('textarea[data-testid="stChatInput"]').value = e.results[0][0].transcript;
-                    recognition.stop();
-                };
-                recognition.onerror = function(e) {
-                    recognition.stop();
-                }
-            } else {
-                alert("Tarayıcınız ses tanımayı desteklemiyor.");
-            }
-        }
-        </script>
-        <button onclick="startDictation()" style="width: 100%; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
-        🎙️ Mikrofonla Konuş
-        </button>
-    """, unsafe_allow_html=True)
-
-    st.write("")
-    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem;'>💬 Aktif Sekmeler</b>", unsafe_allow_html=True)
+    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem;'>💬 Sohbet Sekmeleri</b>", unsafe_allow_html=True)
     chat_list = list(st.session_state.chats.keys())
-    selected_chat = st.selectbox("Geçiş Yap:", chat_list, index=chat_list.index(st.session_state.current_chat), label_visibility="collapsed")
+    selected_chat = st.selectbox("Sekme Seç:", chat_list, index=chat_list.index(st.session_state.current_chat), label_visibility="collapsed")
+    
     if selected_chat != st.session_state.current_chat:
         st.session_state.current_chat = selected_chat
         st.rerun()
 
-    col_btn1, col_btn2 = st.columns(2)
-    if col_btn1.button("➕ Yeni Sekme", use_container_width=True):
-        new_name = f"Sekme {len(st.session_state.chats) + 1}"
-        st.session_state.chats[new_name] = []
-        st.session_state.current_chat = new_name
-        st.session_state.image_seed = random.randint(1, 99999999)
-        st.rerun()
-    if col_btn2.button("🗑️ Temizle", use_container_width=True):
+    col_b1, col_b2 = st.columns(2)
+    if col_b1.button("🗑️ Temizle", use_container_width=True):
         st.session_state.chats[st.session_state.current_chat] = []
         st.rerun()
         
+    yeni_sekme_adi = st.text_input("Yeni Sekme Adı", placeholder="Örn: Proje Analizi", label_visibility="collapsed")
+    if st.button("➕ Sekme Ekle", use_container_width=True):
+        if yeni_sekme_adi and yeni_sekme_adi not in st.session_state.chats:
+            st.session_state.chats[yeni_sekme_adi] = []
+            st.session_state.chat_personalities[yeni_sekme_adi] = "Sen uzman bir yapay zeka asistanısın."
+            st.session_state.current_chat = yeni_sekme_adi
+            st.rerun()
+
     st.write("---")
+    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem;'>🧠 Kişisel Zeka Ayarı</b>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #94a3b8; font-size: 0.85rem;'>Aşağıya yazarak 'Kişisel Zeka' sekmesindeki AI karakterini dilediğin gibi şekillendir.</p>", unsafe_allow_html=True)
     
+    mevcut_kisisel_prompt = st.session_state.chat_personalities.get("Kişisel Zeka", "")
+    yeni_kisisel_prompt = st.text_area("Kişisel Zeka Talimatı:", value=mevcut_kisisel_prompt, height=90)
+    if st.button("Kaydet & Güncelle", use_container_width=True):
+        st.session_state.chat_personalities["Kişisel Zeka"] = yeni_kisisel_prompt
+        st.success("Kişisel zeka karakteri güncellendi!")
+
+    st.write("---")
+    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem;'>🎨 Arka Plan ve Tema</b>", unsafe_allow_html=True)
+    tema_secimi = st.selectbox("Renk Teması Seç:", ["Koyu Gece (Varsayılan)", "Derin Uzay", "Cyberpunk Neon", "Minimal Beyaz"], label_visibility="collapsed")
+    
+    if tema_secimi == "Koyu Gece (Varsayılan)":
+        st.session_state.bg_settings = {"chat_bg": "#14151a", "bubble_ai": "linear-gradient(135deg, rgba(30, 31, 38, 0.9) 0%, rgba(20, 21, 26, 0.9) 100%)", "text_color": "#e2e8f0"}
+    elif tema_secimi == "Derin Uzay":
+        st.session_state.bg_settings = {"chat_bg": "#090d16", "bubble_ai": "linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)", "text_color": "#f8fafc"}
+    elif tema_secimi == "Cyberpunk Neon":
+        st.session_state.bg_settings = {"chat_bg": "#12081c", "bubble_ai": "linear-gradient(135deg, rgba(45, 10, 60, 0.9) 0%, rgba(20, 5, 30, 0.9) 100%)", "text_color": "#ffc8ff"}
+    elif tema_secimi == "Minimal Beyaz":
+        st.session_state.bg_settings = {"chat_bg": "#f8fafc", "bubble_ai": "linear-gradient(135deg, rgba(241, 245, 249, 0.95) 0%, rgba(226, 232, 240, 0.95) 100%)", "text_color": "#0f172a"}
+
+    st.write("---")
     st.markdown("<h3 style='color: #818cf8; font-size: 1.2rem; margin-top:10px;'>🧰 Eyx Araçları</h3>", unsafe_allow_html=True)
     
     if st.button("🎲 Seed Yenile", use_container_width=True):
         st.session_state.image_seed = random.randint(1, 99999999)
         st.success("Seed yenilendi!")
-        
-    st.write("") 
-    
-    with st.expander("🌌 Quantum Canvas (Zihin Haritası)"):
-        canvas_konu = st.text_input("Fikir / Konu Girin:", placeholder="Örn: Yapay Zeka Evrimi")
-        if st.button("Harita Üret", use_container_width=True):
-            if canvas_konu:
-                with st.spinner("Kuantum fikirler haritalandırılıyor..."):
-                    map_prompt = f"'{canvas_konu}' konsepti için birbirine bağlı ana fikirleri, alt dalları ve stratejik adımları içeren detaylı bir zihin haritası (mind map) ve kreatif fikir analizi hazırla."
-                    map_yanit, _ = calistir_gemini(map_prompt, "Sen yaratıcı bir konsept mimarısın. Markdown formatında profesyonel, dallara ayrılmış bir zihin haritası metni çıkar.")
-                    st.session_state.messages.append({"role": "user", "content": f"Quantum Canvas Haritası: {canvas_konu}"})
-                    st.session_state.messages.append({"role": "assistant", "content": f"### 🌌 Quantum Canvas: {canvas_konu}\n\n{map_yanit}"})
-                    st.rerun()
-            else:
-                st.warning("Lütfen bir konu yazın.")
 
     with st.expander("🔗 QR Kod Oluşturucu"):
         qr_metin = st.text_input("Link veya Metin girin:")
@@ -408,21 +437,6 @@ with st.sidebar:
                 encoded_url = urllib.parse.quote(qr_metin)
                 api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={encoded_url}"
                 st.image(api_url, caption="QR Kodunuz Hazır!")
-            else:
-                st.warning("Lütfen metin girin.")
-
-    with st.expander("📝 Hızlı Soru Hazırlayıcı"):
-        hizli_sinav = st.selectbox("Sınav Seç", ["LGS", "YKS-TYT", "YKS-AYT", "Yazılı"])
-        hizli_ders = st.selectbox("Ders Seç", ["Matematik", "Fen Bilimleri", "Türkçe", "Tarih"])
-        hizli_konu = st.text_input("Soru Konusu")
-        hizli_zorluk = st.selectbox("Zorluk", ["Kolay", "Orta", "Zor", "Yeni Nesil"])
-        if st.button("Soruyu Üret", use_container_width=True):
-            if hizli_konu:
-                oto_istek = f"{hizli_sinav} {hizli_ders} dersi {hizli_konu} konusu için {hizli_zorluk} seviyesinde yeni nesil soru oluştur."
-                st.session_state.messages.append({"role": "user", "content": oto_istek})
-                st.rerun()
-            else:
-                st.warning("Lütfen konu yazın.")
 
     with st.expander("🔑 Şifre Üretici"):
         hane_sayisi = st.slider("Uzunluk", min_value=4, max_value=32, value=12)
@@ -430,10 +444,8 @@ with st.sidebar:
             karakterler = string.ascii_letters + string.digits + "!@#$%^&*"
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
-            
-    st.info("⚡ Eyx AI v3.15 (Evrensel Format Destekli Rotasyon) AKTİF")
 
-# --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
+# --- ASENKRON SES ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):
     communicate = edge_tts.Communicate(text, voice_id)
     audio_data = bytearray()
@@ -469,16 +481,13 @@ for idx, msg in enumerate(st.session_state.messages):
                 if st.button(f"🔊 Sesli Dinle", key=f"neural_audio_{idx}"):
                     with st.spinner("Nöral insan sesi sentezleniyor..."):
                         try:
-                            v_name = "tr-TR-EmelNeural" if "Kadın" in neural_ses else "tr-TR-AhmetNeural"
-                            raw_audio = asyncio.run(generate_edge_audio_bytes(msg["content"][:600], v_name))
+                            raw_audio = asyncio.run(generate_edge_audio_bytes(msg["content"][:600], "tr-TR-EmelNeural"))
                             if raw_audio:
                                 st.audio(raw_audio, format='audio/mp3', autoplay=True)
-                            else:
-                                st.error("Ses üretilemedi.")
                         except Exception as e:
                             st.error(f"Ses hatası: {e}")
 
-# --- ANA ETKİLEŞİM INPUTU ---
+# --- ANA GİRDİ ---
 if user_query := st.chat_input("Eyx AI'a bir şeyler sor..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
@@ -497,19 +506,9 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     is_question_intent = any(t in user_query_lower for t in question_triggers)
     is_image_intent = any(kw in user_query_lower for kw in image_keywords)
 
-    persona_talimati = ""
-    if "Samimi" in secilen_tarz:
-        persona_talimati = "Kullanıcıyla konuşurken çok samimi, kanka tarzı, günlük argo ve samimi hitaplar ('kanka', 'reis', 'helal olsun', 'hocam') kullanan, samimi ve rahat bir dille konuş."
-    elif "Sinirli" in secilen_tarz:
-        persona_talimati = "Biraz huysuz, sabırsız, her şeye homurdanan, 'ya yine mi aynı şeyi soruyorsun', 'hadi hızlı ol' gibi hafif sinirli ve sitemkar ama yine de cevabı veren bir karakterde ol."
-    elif "Heyecanlı" in secilen_tarz:
-        persona_talimati = "Aşırı enerjik, yerinde duramayan, her şeye büyük tepkiler veren ('Oooo süper!', 'Vay canına!'), coşkulu bir dille konuş."
-    elif "Soğuk" in secilen_tarz:
-        persona_talimati = "Duygusuz, tamamen robotik, kısa, net ve mesafeli bir dille yanıt ver."
-    else:
-        persona_talimati = "Sakin, bilge, profesyonel, güven veren ve rahatlatıcı bir üslupla konuş."
+    # Aktif sekmeye özel karakter talimatı
+    aktif_persona = st.session_state.chat_personalities.get(st.session_state.current_chat, "Sen akıllı ve yardımsever bir asistansın.")
 
-    # --- EASTER EGG KONTROLÜ ---
     easter_egg_yaniti = None
     if "sancak altuntaş mal" in user_query_lower or user_query_lower == "sancak altuntaş mal":
         easter_egg_yaniti = "Evet aga"
@@ -523,12 +522,12 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     elif is_question_intent:
         st.markdown("""
         <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white;">
-            ⏳ Soru hazırlanıyor...
+            ⏳ Eyx AI düşünüyor...
             <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
         """, unsafe_allow_html=True)
         
-        with st.spinner("Soru sentezleniyor..."):
+        with st.spinner("Eyx AI düşünüyor..."):
             prompt_instruction = (
                 "Kullanıcının isteğini analiz edip JSON döndür.\n"
                 "KURALLAR:\n"
@@ -538,8 +537,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             metin_talimati = (
-                f"Sen akıllı bir yapay zeka asistanısın. {persona_talimati} "
-                "Yazım yanlışlarını görmezden gelip net cevaplar ver. Şıklar uzunsa alt alta, kısa sayılarsa yan yana yaz. Detaylı çözüm ve cevap ekle. E şıkkını kullanma."
+                f"{aktif_persona} "
+                "Yazım yanlışlarını görmezden gelip net cevaplar ver. Detaylı çözüm ve cevap ekle."
             )
             soru_metni, _ = calistir_gemini(user_query, metin_talimati, geçmiş=formatted_history)
             
@@ -572,7 +571,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     elif is_image_intent:
         st.markdown("""
         <div class="neon-loading-box">
-            ✨ Görsel hazırlanıyor...
+            ✨ Eyx AI düşünüyor...
             <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
         """, unsafe_allow_html=True)
@@ -612,27 +611,33 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         st.rerun()
             
     else:
-        with st.spinner("Eyx AI verileri işliyor..."):
-            system_instruction = (
-                f"Sen Eyx AI destekli akıllı asistanısın. {persona_talimati} "
-                "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
-                "Kullanıcı HANGİ konuyu soruyorsa SADECE ona yanıt ver. Birbirine bağlama, tek kelime yazılırsa o kelimeyle ilgili kısa yanıt ver, konuyu asla başka yerlere çekme. "
-                "SADECE kullanıcı futbol veya sporla ilgili bir soru sorarsa arka plandaki canlı motor verilerini devreye sok ve o zaman spor cevabı ver. Spor sorulmadıkça futboldan bahsetme. "
-                "Asla kullanıcıyı harici web sitelerine veya linklere yönlendirme; doğrudan net cevabı kendin ver."
-            )
-            görsel_parçası = None
-            if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):
-                import base64
-                encoded_img = base64.b64encode(st.session_state.uploaded_file_data.getvalue()).decode("utf-8")
-                görsel_parçası = {"mime_type": st.session_state.uploaded_file_data.type, "data": encoded_img}
-            
-            ai_response, cevap_alindi = calistir_gemini(user_query, system_instruction, geçmiş=formatted_history, görsel_parçası=görsel_parçası)
-            if not cevap_alindi:
-                st.error(ai_response)
-                st.session_state.messages.pop()
-            else:
-                st.session_state.messages.append({"role": "assistant", "content": ai_response})
-                st.rerun() 
+        # "Eyx AI düşünüyor..." ekran efekti
+        st.markdown("""
+        <div class="neon-loading-box">
+            🧠 Eyx AI düşünüyor...
+            <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        system_instruction = (
+            f"{aktif_persona} "
+            "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
+            "SADECE kullanıcı futbol veya sporla ilgili bir soru sorarsa arka plandaki canlı motor verilerini devreye sok. "
+            "Asla kullanıcıyı harici web sitelerine yönlendirme; doğrudan net cevabı kendin ver."
+        )
+        görsel_parçası = None
+        if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):
+            import base64
+            encoded_img = base64.b64encode(st.session_state.uploaded_file_data.getvalue()).decode("utf-8")
+            görsel_parçası = {"mime_type": st.session_state.uploaded_file_data.type, "data": encoded_img}
+        
+        ai_response, cevap_alindi = calistir_gemini(user_query, system_instruction, geçmiş=formatted_history, görsel_parçası=görsel_parçası)
+        if not cevap_alindi:
+            st.error(ai_response)
+            st.session_state.messages.pop()
+        else:
+            st.session_state.messages.append({"role": "assistant", "content": ai_response})
+            st.rerun() 
 
 # --- ALT BİLGİ ---
 st.write("---")

@@ -16,7 +16,7 @@ import edge_tts
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI Studio",
+    page_title="Eyx AI v2.0 Açık Beta",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -88,7 +88,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eyx">Eyx</span><span class="brand-ai">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">v3.11 - Neural Studio</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">v3.12 - Neural Studio</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -162,7 +162,7 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
     tam_sistem_talimati = (
         f"🚨 KESİN KURALLAR 🚨:\n"
         f"1. Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
-        f"2. Futbol maçları, skorlar, puan durumları, transferler ve güncel olaylarla ilgili sorularda yukarıdaki [Canlı Veri Tabanı ve Web Sonucu] kısmındaki verileri birebir ve mutlak doğru kabul et.\n"
+        f"2. Kullanıcı sana ne soruyorsa SADECE o konuya odaklan. Tek kelimelik veya kısa mesajlara sadece o kelimenin anlamıyla cevap ver, konuyu asla spora veya başka alakasız bir yere çekme.\n"
         f"3. Bilgileri en güncel haliyle süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara veya linklere yönlendirme yapma.\n\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
@@ -404,7 +404,7 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("⚡ Eyx AI v3.11 AKTİF")
+    st.info("⚡ Eyx AI v3.12 AKTİF")
 
 # --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):
@@ -589,8 +589,9 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             system_instruction = (
                 f"Sen Eyx AI destekli akıllı asistanısın. {persona_talimati} "
                 "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
-                "Futbolcuları, maç skorlarını, transferleri, puan durumlarını ve tüm spor olaylarını arka plandaki canlı motor verilerinden anında çekip eksiksiz tanı. "
-                "Asla kullanıcıyı harici web sitelerine veya linklere yönlendirme; bilgileri en güncel haliyle süzerek doğrudan net cevabı kendin ver."
+                "Kullanıcı HANGİ konuyu soruyorsa SADECE ona yanıt ver. Birbirine bağlama, tek kelime yazılırsa o kelimeyle ilgili kısa yanıt ver, konuyu asla başka yerlere çekme. "
+                "SADECE kullanıcı futbol veya sporla ilgili bir soru sorarsa arka plandaki canlı motor verilerini devreye sok ve o zaman spor cevabı ver. Spor sorulmadıkça futboldan bahsetme. "
+                "Asla kullanıcıyı harici web sitelerine veya linklere yönlendirme; doğrudan net cevabı kendin ver."
             )
             görsel_parçası = None
             if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):

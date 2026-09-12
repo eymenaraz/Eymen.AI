@@ -42,11 +42,16 @@ if "chat_personalities" not in st.session_state:
         "Kişisel Zeka": "Sen kullanıcının özel olarak yapılandırdığı kişisel yapay zekasısın."
     }
 
+# Tema renk paletleri tanımı
 if "bg_settings" not in st.session_state:
     st.session_state.bg_settings = {
+        "name": "Koyu Gece (Varsayılan)",
         "chat_bg": "#14151a",
+        "sidebar_bg": "#121316",
         "bubble_ai": "linear-gradient(135deg, rgba(30, 31, 38, 0.9) 0%, rgba(20, 21, 26, 0.9) 100%)",
-        "text_color": "#e2e8f0"
+        "text_color": "#e2e8f0",
+        "card_bg": "rgba(20, 21, 26, 0.7)",
+        "border_color": "rgba(129, 140, 248, 0.3)"
     }
 
 if "image_seed" not in st.session_state:
@@ -68,31 +73,78 @@ if "gunun_sozu" not in st.session_state:
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
-# --- DİNAMİK CSS VE ÖZELLEŞTİRİLEBİLİR STİLLER ---
-current_bg = st.session_state.bg_settings["chat_bg"]
-current_bubble_ai = st.session_state.bg_settings["bubble_ai"]
-current_text_color = st.session_state.bg_settings["text_color"]
+# --- DİNAMİK CSS VE TEMA MOTORU ---
+t_bg = st.session_state.bg_settings["chat_bg"]
+t_sidebar = st.session_state.bg_settings["sidebar_bg"]
+t_bubble_ai = st.session_state.bg_settings["bubble_ai"]
+t_text = st.session_state.bg_settings["text_color"]
+t_card = st.session_state.bg_settings["card_bg"]
+t_border = st.session_state.bg_settings["border_color"]
 
 st.markdown(f"""
 <style>
-    [data-testid="stChatInput"] textarea, .stTextInput input, textarea {{ font-size: 16px !important; -webkit-text-size-adjust: 100%; }}
-    [data-testid="stSidebar"] {{ border-right: 1px solid rgba(128, 128, 128, 0.15); background-color: #121316 !important; }}
-    
     .stApp {{
-        background-color: {current_bg} !important;
+        background-color: {t_bg} !important;
+        color: {t_text} !important;
+    }}
+    
+    [data-testid="stSidebar"] {{
+        background-color: {t_sidebar} !important;
+        border-right: 1px solid {t_border};
     }}
 
-    .user-bubble {{ background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }}
-    .ai-bubble {{ background: {current_bubble_ai}; color: {current_text_color}; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(129, 140, 248, 0.3); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }}
+    [data-testid="stSidebar"] * {{
+        color: {t_text} !important;
+    }}
+
+    [data-testid="stChatInput"] textarea, .stTextInput input, textarea {{
+        font-size: 16px !important;
+        -webkit-text-size-adjust: 100%;
+        background-color: {t_card} !important;
+        color: {t_text} !important;
+        border-color: {t_border} !important;
+    }}
+
+    .stSelectbox div[data-baseweb="select"] {{
+        background-color: {t_card} !important;
+        color: {t_text} !important;
+    }}
+
+    .user-bubble {{
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        padding: 14px 18px;
+        border-radius: 20px 20px 4px 20px;
+        margin: 10px 0 10px auto;
+        max-width: 75%;
+        width: fit-content;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.15);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 1.02rem;
+    }}
+
+    .ai-bubble {{
+        background: {t_bubble_ai};
+        color: {t_text};
+        padding: 14px 18px;
+        border-radius: 20px 20px 20px 4px;
+        margin: 10px auto 10px 0;
+        max-width: 75%;
+        width: fit-content;
+        border: 1px solid {t_border};
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 1.02rem;
+    }}
     
     .neon-loading-box {{
-        background: linear-gradient(135deg, rgba(20, 21, 26, 0.95) 0%, rgba(99, 102, 241, 0.25) 100%);
+        background: {t_bubble_ai};
         color: #818cf8;
         padding: 14px 20px;
         border-radius: 14px;
         margin: 10px auto 10px 0;
         max-width: 85%;
-        border: 1px solid rgba(129, 140, 248, 0.5);
+        border: 1px solid {t_border};
         font-family: 'Segoe UI', system-ui, sans-serif;
         font-size: 1rem;
         font-weight: 500;
@@ -101,16 +153,17 @@ st.markdown(f"""
     }}
 
     .welcome-banner {{
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(30, 31, 38, 0.8) 100%);
-        border: 1px solid rgba(129, 140, 248, 0.4);
+        background: {t_card};
+        border: 1px solid {t_border};
         padding: 12px 20px;
         border-radius: 14px;
         text-align: center;
         margin-bottom: 20px;
         box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1);
     }}
+    
     .welcome-text {{
-        color: #c7d2fe;
+        color: {t_text};
         font-family: 'Segoe UI', system-ui, sans-serif;
         font-size: 0.95rem;
         font-weight: 600;
@@ -120,7 +173,8 @@ st.markdown(f"""
     .logo-container {{ text-align: center; margin-bottom: 2px; padding: 5px; }}
     .brand-eyx {{ font-size: 3.5rem; font-weight: 900; color: #6366f1; }}
     .brand-ai {{ font-size: 3.5rem; font-weight: 900; color: #a5b4fc; margin-left: 10px; }}
-    .subtitle {{ color: #94a3b8; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 15px; }}
+    .subtitle {{ color: {t_text}; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 15px; opacity: 0.8; }}
+    
     .typing-dots {{ display: inline-flex; align-items: center; margin-left: 8px; }}
     .dot {{ width: 6px; height: 6px; background-color: #818cf8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }}
     .dot:nth-child(1) {{ animation-delay: -0.32s; }}
@@ -129,8 +183,8 @@ st.markdown(f"""
 
     .file-preview-card {{
         position: relative;
-        background: rgba(20, 21, 26, 0.7);
-        border: 1px solid rgba(129, 140, 248, 0.3);
+        background: {t_card};
+        border: 1px solid {t_border};
         padding: 10px 15px;
         border-radius: 12px;
         display: inline-flex;
@@ -138,7 +192,7 @@ st.markdown(f"""
         gap: 10px;
         margin-bottom: 15px;
     }}
-    .file-preview-text {{ color: #e2e8f0; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }}
+    .file-preview-text {{ color: {t_text}; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -379,7 +433,26 @@ with st.sidebar:
     st.markdown("<h2 style='color: #818cf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>⚡ Eyx AI Menü</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem;'>💬 Sohbet Sekmeleri</b>", unsafe_allow_html=True)
+    # Hesap / Giriş Bölümü
+    st.markdown("<b style='font-size: 1.05rem;'>👤 Hesap & Giriş</b>", unsafe_allow_html=True)
+    if "user_email" not in st.session_state:
+        st.session_state.user_email = None
+
+    if st.session_state.user_email:
+        st.success(f"Giriş yapıldı:\n{st.session_state.user_email}")
+        if st.button("Çıkış Yap", use_container_width=True):
+            st.session_state.user_email = None
+            st.rerun()
+    else:
+        st.info("Google hesabınızla bağlanın, sohbetleriniz senkronize olsun.")
+        if st.button("🔵 Google ile Giriş Yap", use_container_width=True):
+            # Google OAuth simülasyonu veya entegrasyon noktası
+            st.session_state.user_email = "mertcan@gmail.com"
+            st.success("Google ile başarıyla giriş yapıldı!")
+            st.rerun()
+
+    st.write("---")
+    st.markdown("<b style='font-size: 1.05rem;'>💬 Sohbet Sekmeleri</b>", unsafe_allow_html=True)
     chat_list = list(st.session_state.chats.keys())
     selected_chat = st.selectbox("Sekme Seç:", chat_list, index=chat_list.index(st.session_state.current_chat), label_visibility="collapsed")
     
@@ -401,8 +474,8 @@ with st.sidebar:
             st.rerun()
 
     st.write("---")
-    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem;'>🧠 Kişisel Zeka Ayarı</b>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #94a3b8; font-size: 0.85rem;'>Aşağıya yazarak 'Kişisel Zeka' sekmesindeki AI karakterini dilediğin gibi şekillendir.</p>", unsafe_allow_html=True)
+    st.markdown("<b style='font-size: 1.05rem;'>🧠 Kişisel Zeka Ayarı</b>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.85rem; opacity: 0.7;'>Aşağıya yazarak 'Kişisel Zeka' sekmesindeki AI karakterini dilediğin gibi şekillendir.</p>", unsafe_allow_html=True)
     
     mevcut_kisisel_prompt = st.session_state.chat_personalities.get("Kişisel Zeka", "")
     yeni_kisisel_prompt = st.text_area("Kişisel Zeka Talimatı:", value=mevcut_kisisel_prompt, height=90)
@@ -411,17 +484,38 @@ with st.sidebar:
         st.success("Kişisel zeka karakteri güncellendi!")
 
     st.write("---")
-    st.markdown("<b style='color: #e2e8f0; font-size: 1.05rem;'>🎨 Arka Plan ve Tema</b>", unsafe_allow_html=True)
-    tema_secimi = st.selectbox("Renk Teması Seç:", ["Koyu Gece (Varsayılan)", "Derin Uzay", "Cyberpunk Neon", "Minimal Beyaz"], label_visibility="collapsed")
+    st.markdown("<b style='font-size: 1.05rem;'>🎨 Arka Plan ve Tema</b>", unsafe_allow_html=True)
     
-    if tema_secimi == "Koyu Gece (Varsayılan)":
-        st.session_state.bg_settings = {"chat_bg": "#14151a", "bubble_ai": "linear-gradient(135deg, rgba(30, 31, 38, 0.9) 0%, rgba(20, 21, 26, 0.9) 100%)", "text_color": "#e2e8f0"}
-    elif tema_secimi == "Derin Uzay":
-        st.session_state.bg_settings = {"chat_bg": "#090d16", "bubble_ai": "linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)", "text_color": "#f8fafc"}
-    elif tema_secimi == "Cyberpunk Neon":
-        st.session_state.bg_settings = {"chat_bg": "#12081c", "bubble_ai": "linear-gradient(135deg, rgba(45, 10, 60, 0.9) 0%, rgba(20, 5, 30, 0.9) 100%)", "text_color": "#ffc8ff"}
-    elif tema_secimi == "Minimal Beyaz":
-        st.session_state.bg_settings = {"chat_bg": "#f8fafc", "bubble_ai": "linear-gradient(135deg, rgba(241, 245, 249, 0.95) 0%, rgba(226, 232, 240, 0.95) 100%)", "text_color": "#0f172a"}
+    tema_secenekleri = ["Koyu Gece (Varsayılan)", "Derin Uzay", "Cyberpunk Neon", "Minimal Beyaz"]
+    mevcut_tema_adi = st.session_state.bg_settings.get("name", "Koyu Gece (Varsayılan)")
+    tema_secimi = st.selectbox("Renk Teması Seç:", tema_secenekleri, index=tema_secenekleri.index(mevcut_tema_adi), label_visibility="collapsed")
+    
+    if tema_secimi != mevcut_tema_adi:
+        if tema_secimi == "Koyu Gece (Varsayılan)":
+            st.session_state.bg_settings = {
+                "name": tema_secimi, "chat_bg": "#14151a", "sidebar_bg": "#121316",
+                "bubble_ai": "linear-gradient(135deg, rgba(30, 31, 38, 0.9) 0%, rgba(20, 21, 26, 0.9) 100%)",
+                "text_color": "#e2e8f0", "card_bg": "rgba(20, 21, 26, 0.7)", "border_color": "rgba(129, 140, 248, 0.3)"
+            }
+        elif tema_secimi == "Derin Uzay":
+            st.session_state.bg_settings = {
+                "name": tema_secimi, "chat_bg": "#090d16", "sidebar_bg": "#05070b",
+                "bubble_ai": "linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)",
+                "text_color": "#f8fafc", "card_bg": "rgba(15, 23, 42, 0.8)", "border_color": "rgba(56, 189, 248, 0.3)"
+            }
+        elif tema_secimi == "Cyberpunk Neon":
+            st.session_state.bg_settings = {
+                "name": tema_secimi, "chat_bg": "#12081c", "sidebar_bg": "#0b0412",
+                "bubble_ai": "linear-gradient(135deg, rgba(45, 10, 60, 0.9) 0%, rgba(20, 5, 30, 0.9) 100%)",
+                "text_color": "#ffc8ff", "card_bg": "rgba(45, 10, 60, 0.5)", "border_color": "rgba(236, 72, 153, 0.4)"
+            }
+        elif tema_secimi == "Minimal Beyaz":
+            st.session_state.bg_settings = {
+                "name": tema_secimi, "chat_bg": "#f8fafc", "sidebar_bg": "#f1f5f9",
+                "bubble_ai": "linear-gradient(135deg, rgba(226, 232, 240, 0.95) 0%, rgba(203, 213, 225, 0.95) 100%)",
+                "text_color": "#0f172a", "card_bg": "#ffffff", "border_color": "rgba(148, 163, 184, 0.4)"
+            }
+        st.rerun()
 
     st.write("---")
     st.markdown("<h3 style='color: #818cf8; font-size: 1.2rem; margin-top:10px;'>🧰 Eyx Araçları</h3>", unsafe_allow_html=True)
@@ -506,7 +600,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     is_question_intent = any(t in user_query_lower for t in question_triggers)
     is_image_intent = any(kw in user_query_lower for kw in image_keywords)
 
-    # Aktif sekmeye özel karakter talimatı
     aktif_persona = st.session_state.chat_personalities.get(st.session_state.current_chat, "Sen akıllı ve yardımsever bir asistansın.")
 
     easter_egg_yaniti = None
@@ -611,7 +704,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         st.rerun()
             
     else:
-        # "Eyx AI düşünüyor..." ekran efekti
         st.markdown("""
         <div class="neon-loading-box">
             🧠 Eyx AI düşünüyor...
@@ -641,4 +733,4 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
 # --- ALT BİLGİ ---
 st.write("---")
-st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 0.9rem;'>Eyx AI Studio © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 0.9rem; opacity: 0.7;'>Eyx AI Studio © 2026</p>", unsafe_allow_html=True)

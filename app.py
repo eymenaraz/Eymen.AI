@@ -15,7 +15,7 @@ from gtts import gTTS
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v8.0 Audio Engine Edition",
+    page_title="Eyx AI - v8.1 Natural Voice Edition",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -37,7 +37,7 @@ if "dynamic_persona_state" not in st.session_state:
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
-# --- CSS VE STYLING ---
+# --- CSS VE STYLING (Kibar Butonlar için) ---
 st.markdown("""
 <style>
     [data-testid="stChatInput"] textarea, .stTextInput input, textarea { font-size: 16px !important; -webkit-text-size-adjust: 100%; }
@@ -87,7 +87,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Audio Engine Master Edition (2026)</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Natural Voice Edition (2026)</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -285,6 +285,13 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     
+    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem; margin-top: 15px; display: block;'>🗣️ Doğal Ses Tonu</b>", unsafe_allow_html=True)
+    ses_tonu = st.selectbox(
+        "Ses Tonu Seç", 
+        ["Doğal Kadın Ses Tonu", "Doğal Erkek Ses Tonu (Daha Kalın Ton)"], 
+        label_visibility="collapsed"
+    )
+    
     st.write("")
     st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>💬 Aktif Oturumlar</b>", unsafe_allow_html=True)
     chat_list = list(st.session_state.chats.keys())
@@ -357,9 +364,9 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v8.0 AUDIO AKTİF")
+    st.info("🚀 EYX AI v8.1 NATURAL AKTİF")
 
-# --- MESAJLARI GÖSTERME (Gerçek MP3 Ses Çalar Destekli) ---
+# --- MESAJLARI GÖSTERME (Kibar Buton ve Doğal Ses Motoru) ---
 for idx, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -383,15 +390,19 @@ for idx, msg in enumerate(st.session_state.messages):
             if msg.get("content"):
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
                 
-                # Gerçek MP3 Ses Üretici (gTTS)
-                try:
-                    tts = gTTS(text=msg["content"][:400], lang='tr', slow=False)
-                    audio_fp = io.BytesIO()
-                    tts.write_to_fp(audio_fp)
-                    audio_fp.seek(0)
-                    st.audio(audio_fp, format='audio/mp3')
-                except:
-                    st.caption("🔊 Ses dosyası oluşturulamadı.")
+                # Kibar ve şık dinleme açma butonu
+                if st.button(f"🔊 Sesli Dinle", key=f"listen_btn_{idx}", help="Bu yanıtı akıcı insan sesiyle dinle"):
+                    with st.spinner("Doğal ses sentezleniyor..."):
+                        try:
+                            # gTTS tld parametresi ile ses tonuna hafif karakteristik dokunuş
+                            tld_val = 'com.tr' if "Kadın" in ses_tonu else 'co.uk'
+                            tts = gTTS(text=msg["content"][:500], lang='tr', tld=tld_val, slow=False)
+                            audio_fp = io.BytesIO()
+                            tts.write_to_fp(audio_fp)
+                            audio_fp.seek(0)
+                            st.audio(audio_fp, format='audio/mp3', autoplay=True)
+                        except Exception as e:
+                            st.error(f"Ses oluşturulamadı: {e}")
 
 # --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Bir şeyler sor..."):

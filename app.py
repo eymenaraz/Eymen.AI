@@ -11,10 +11,11 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 from datetime import datetime
 import pytz
+from gtts import gTTS
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v7.6 Clean Edition",
+    page_title="Eyx AI - v8.0 Audio Engine Edition",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -86,7 +87,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Clean Master Edition (2026)</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Audio Engine Master Edition (2026)</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -108,7 +109,7 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- GELİŞMİŞ ANLIK WEB ARAMA MOTORU ---
+# --- WEB ARAMA ---
 def canli_web_ara(sorgu):
     try:
         url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(sorgu)}"
@@ -124,7 +125,6 @@ def canli_web_ara(sorgu):
         pass
     return ""
 
-# --- KESİN VE DOĞRU TÜRKİYE SAATİ (UTC+3) ---
 def get_current_turkey_time():
     try:
         tr_tz = pytz.timezone('Europe/Istanbul')
@@ -147,24 +147,6 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         bulunan_web = canli_web_ara(sorgu)
         if bulunan_web:
             web_bilgisi = f"\n[Güncel Canlı Veri / Web Bilgisi]: {bulunan_web}"
-
-    evolution_prompt = f"Kullanıcı mesajı: '{sorgu}'. Bu mesajı incele ve en uygun uzmanlık rolünü kısa bir Türkçe tanım olarak ver."
-    
-    aktif_key_temp = None
-    for i in range(1, 11):
-        if f"KEY_{i}" in st.secrets:
-            aktif_key_temp = st.secrets[f"KEY_{i}"]
-            break
-            
-    if aktif_key_temp:
-        try:
-            genai.configure(api_key=aktif_key_temp)
-            eval_model = genai.GenerativeModel("gemini-2.5-flash")
-            eval_res = eval_model.generate_content(evolution_prompt)
-            if eval_res and eval_res.text:
-                st.session_state.dynamic_persona_state = eval_res.text.strip()
-        except:
-            pass
 
     tam_sistem_talimati = (
         f"🚨 KESİN ZAMAN KURALI 🚨:\n"
@@ -198,7 +180,6 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
                 
     return f"Bağlantı hatası oluştu: {son_hata}", False
 
-# --- ALTERNATİF GÖRSEL ÜRETİCİ ---
 def alternatif_gorsel_uret(prompt_metni):
     try:
         encoded_prompt = urllib.parse.quote(prompt_metni)
@@ -214,7 +195,6 @@ def alternatif_gorsel_uret(prompt_metni):
         pass
     return None, False
 
-# --- DİNAMİK GÖRSEL SENTEZ MOTORU ---
 def tek_gorsel_olustur(diyagram_bytes, soru_metni):
     try:
         a4_width = 800
@@ -292,7 +272,6 @@ with st.sidebar:
     st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🛠️ MENÜ</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    # --- KONUŞMA TARZI VE SES TİPİ SEÇİMİ ---
     st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>🎭 Konuşma Tarzı (Persona)</b>", unsafe_allow_html=True)
     secilen_tarz = st.selectbox(
         "Tarz Seç", 
@@ -303,13 +282,6 @@ with st.sidebar:
             "Heyecanlı / Hiperaktif", 
             "Soğuk / Robotik ve Net"
         ], 
-        label_visibility="collapsed"
-    )
-    
-    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem; margin-top: 15px; display: block;'>🗣️ Ses Tipi (Erkek / Kadın)</b>", unsafe_allow_html=True)
-    ses_cinsiyeti = st.selectbox(
-        "Ses Seç", 
-        ["Otomatik / Cihaz Varsayılanı", "Erkek Ses Tonu", "Kadın Ses Tonu"], 
         label_visibility="collapsed"
     )
     
@@ -385,9 +357,9 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v7.6 CLEAN AKTİF")
+    st.info("🚀 EYX AI v8.0 AUDIO AKTİF")
 
-# --- MESAJLARI GÖSTERME (Sesli Okuma & Cinsiyet Filtreli) ---
+# --- MESAJLARI GÖSTERME (Gerçek MP3 Ses Çalar Destekli) ---
 for idx, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -411,42 +383,15 @@ for idx, msg in enumerate(st.session_state.messages):
             if msg.get("content"):
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
                 
-                safe_text = msg["content"].replace('"', '\\"').replace('\n', ' ').replace("'", "\\'")
-                st.markdown(f"""
-                    <script>
-                    function playSpeech_{idx}() {{
-                        if ('speechSynthesis' in window) {{
-                            window.speechSynthesis.cancel();
-                            let text = "{safe_text}";
-                            let utterance = new SpeechSynthesisUtterance(text);
-                            utterance.lang = 'tr-TR';
-                            utterance.rate = 1.0;
-                            
-                            let voices = window.speechSynthesis.getVoices();
-                            let selectedVoice = voices.find(v => v.lang.includes('tr'));
-                            
-                            if (voices.length > 0) {{
-                                let genderChoice = "{ses_cinsiyeti}";
-                                if (genderChoice.includes("Erkek")) {{
-                                    let maleVoice = voices.find(v => v.lang.includes('tr') && (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('ahmet') || v.name.toLowerCase().includes('kaan')));
-                                    if (maleVoice) selectedVoice = maleVoice;
-                                }} else if (genderChoice.includes("Kadın")) {{
-                                    let femaleVoice = voices.find(v => v.lang.includes('tr') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('yelda') || v.name.toLowerCase().includes('cemre') || v.name.toLowerCase().includes('zeynep')));
-                                    if (femaleVoice) selectedVoice = femaleVoice;
-                                }}
-                            }}
-                            if (selectedVoice) utterance.voice = selectedVoice;
-                            
-                            window.speechSynthesis.speak(utterance);
-                        }} else {{
-                            alert("Tarayıcınız ses sentezlemeyi desteklemiyor.");
-                        }}
-                    }}
-                    </script>
-                    <button onclick="playSpeech_{idx}()" style="background: #1e293b; color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600;">
-                    🔊 Sesli Dinle
-                    </button>
-                """, unsafe_allow_html=True)
+                # Gerçek MP3 Ses Üretici (gTTS)
+                try:
+                    tts = gTTS(text=msg["content"][:400], lang='tr', slow=False)
+                    audio_fp = io.BytesIO()
+                    tts.write_to_fp(audio_fp)
+                    audio_fp.seek(0)
+                    st.audio(audio_fp, format='audio/mp3')
+                except:
+                    st.caption("🔊 Ses dosyası oluşturulamadı.")
 
 # --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Bir şeyler sor..."):

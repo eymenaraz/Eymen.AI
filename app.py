@@ -16,8 +16,8 @@ import edge_tts
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI",
-    page_icon="⚡",
+    page_title="Google Chrome - Eyx AI",
+    page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -38,22 +38,22 @@ if "dynamic_persona_state" not in st.session_state:
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
-# --- CSS VE STYLING ---
+# --- CSS VE STYLING (CHROME TEMA ENTEGRASYONU) ---
 st.markdown("""
 <style>
     [data-testid="stChatInput"] textarea, .stTextInput input, textarea { font-size: 16px !important; -webkit-text-size-adjust: 100%; }
-    [data-testid="stSidebar"] { border-right: 1px solid rgba(128, 128, 128, 0.15); background-color: #0f172a !important; }
-    .user-bubble { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
-    .ai-bubble { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); color: #f8fafc; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 4px 10px rgba(139, 92, 246, 0.1); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
+    [data-testid="stSidebar"] { border-right: 1px solid rgba(128, 128, 128, 0.15); background-color: #202124 !important; }
+    .user-bubble { background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%); color: white; padding: 14px 18px; border-radius: 20px 20px 4px 20px; margin: 10px 0 10px auto; max-width: 75%; width: fit-content; box-shadow: 0 4px 10px rgba(26, 115, 232, 0.15); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
+    .ai-bubble { background: linear-gradient(135deg, rgba(41, 42, 45, 0.9) 0%, rgba(32, 33, 36, 0.9) 100%); color: #e8eaed; padding: 14px 18px; border-radius: 20px 20px 20px 4px; margin: 10px auto 10px 0; max-width: 75%; width: fit-content; border: 1px solid rgba(138, 180, 248, 0.3); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
     
     .neon-loading-box {
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 58, 138, 0.85) 100%);
-        color: #93c5fd;
+        background: linear-gradient(135deg, rgba(32, 33, 36, 0.95) 0%, rgba(26, 115, 232, 0.25) 100%);
+        color: #8ab4f8;
         padding: 14px 20px;
         border-radius: 14px;
         margin: 10px auto 10px 0;
         max-width: 85%;
-        border: 1px solid rgba(56, 189, 248, 0.5);
+        border: 1px solid rgba(138, 180, 248, 0.5);
         font-family: 'Segoe UI', system-ui, sans-serif;
         font-size: 1rem;
         font-weight: 500;
@@ -62,19 +62,19 @@ st.markdown("""
     }
 
     .logo-container { text-align: center; margin-bottom: 2px; padding: 5px; }
-    .brand-eymen { font-size: 3.5rem; font-weight: 900; color: #2563eb; }
-    .brand-v2 { font-size: 3.5rem; font-weight: 900; color: #38bdf8; margin-left: 10px; }
-    .subtitle { color: #64748b; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 25px; }
+    .brand-eymen { font-size: 3.5rem; font-weight: 900; color: #1a73e8; }
+    .brand-v2 { font-size: 3.5rem; font-weight: 900; color: #8ab4f8; margin-left: 10px; }
+    .subtitle { color: #9aa0a6; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 25px; }
     .typing-dots { display: inline-flex; align-items: center; margin-left: 8px; }
-    .dot { width: 6px; height: 6px; background-color: #38bdf8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
+    .dot { width: 6px; height: 6px; background-color: #8ab4f8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }
     .dot:nth-child(1) { animation-delay: -0.32s; }
     .dot:nth-child(2) { animation-delay: -0.16s; }
     @keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
 
     .file-preview-card {
         position: relative;
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        background: rgba(32, 33, 36, 0.7);
+        border: 1px solid rgba(138, 180, 248, 0.3);
         padding: 10px 15px;
         border-radius: 12px;
         display: inline-flex;
@@ -82,13 +82,13 @@ st.markdown("""
         gap: 10px;
         margin-bottom: 15px;
     }
-    .file-preview-text { color: #f8fafc; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }
+    .file-preview-text { color: #e8eaed; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
 # --- BAŞLIK ALANI ---
-st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">v3.4</p>', unsafe_allow_html=True)
+st.markdown('<div class="logo-container"><span class="brand-eymen">Chrome</span><span class="brand-v2">Eyx AI</span></div>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">v3.6 - Google Chrome Engine</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -110,28 +110,29 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- CHROME TABANLI GÜÇLÜ ARAMA MOTORU ---
-def akilli_kaynak_ara(sorgu):
+# --- GOOGLE CHROME ÜST DÜZEY CANLI ARAMA MOTORU ---
+def chrome_canli_arama_motoru(sorgu):
     try:
         sorgu_terimi = sorgu
         sport_keywords = ["maç", "skor", "futbol", "puan durumu", "fikstür", "basketbol", "canlı skor", "iddaa", "şampiyonlar ligi", "lig", "süper lig", "gol", "oynadı", "kaç kaç bitti"]
         if any(k in sorgu.lower() for k in sport_keywords):
             sorgu_terimi = f"site:flashscore.com.tr {sorgu}"
             
-        url = f"https://www.google.com/search?q={urllib.parse.quote(sorgu_terimi)}&hl=tr"
+        url = f"https://www.google.com/search?q={urllib.parse.quote(sorgu_terimi)}&hl=tr&gl=tr"
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
         }
-        resp = requests.get(url, headers=headers, timeout=5)
+        resp = requests.get(url, headers=headers, timeout=6)
         if resp.status_code == 200:
             import re
             snippets = re.findall(r'<div[^>]*class="BNeawe s3v9rd AP7Wnd"[^>]*>(.*?)</div>', resp.text)
             if not snippets:
                 snippets = re.findall(r'<span[^>]*>(.*?)</span>', resp.text)
             
-            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:6]]
+            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:8]]
             if clean_snippets:
-                return " | ".join([s for s in clean_snippets if len(s) > 15])
+                return " | ".join([s for s in clean_snippets if len(s) > 12])
     except:
         pass
     return ""
@@ -149,14 +150,14 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
     son_hata = "API anahtarı bulunamadı."
     an_zaman = get_current_turkey_time()
     
-    kaynak_verisi = akilli_kaynak_ara(sorgu)
-    web_bilgisi = f"\n[Google Canlı Arama Sonucu]: {kaynak_verisi}" if kaynak_verisi else ""
+    kaynak_verisi = chrome_canli_arama_motoru(sorgu)
+    web_bilgisi = f"\n[Google Chrome Canlı Arama Sonucu]: {kaynak_verisi}" if kaynak_verisi else ""
 
     tam_sistem_talimati = (
         f"🚨 KESİN KURALLAR 🚨:\n"
         f"1. Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
-        f"2. Spor, maç sonuçları, fikstür ve skor sorularında yukarıdaki Google arama sonuçlarını (Flashscore odaklı) mutlak surette baz al.\n"
-        f"3. Diğer tüm konularda en güncel bilgileri süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara veya linklere yönlendirme yapma.\n\n"
+        f"2. Ünlüler, futbolcular, biyografiler, maçlar ve güncel olaylarla ilgili her soruda yukarıdaki Google Chrome Canlı Arama Sonuçlarını mutlak surette baz alarak kişileri ve bilgileri tam olarak tanı.\n"
+        f"3. Bilgileri en güncel haliyle süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara veya linklere yönlendirme yapma.\n\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
     
@@ -263,7 +264,7 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
         
         y_cursor += dh + 40
         for line in lines:
-            draw.text((margin, y_cursor), line, fill="#0f172a", font=font)
+            draw.text((margin, y_cursor), line, fill="#202124", font=font)
             y_cursor += line_height
             
         out_bytes = io.BytesIO()
@@ -274,10 +275,10 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
 
 # --- SIDEBAR KONTROL PANELİ ---
 with st.sidebar:
-    st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🛠️ MENÜ</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #8ab4f8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🌐 Chrome Menü</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>🎭 Konuşma Tarzı (Persona)</b>", unsafe_allow_html=True)
+    st.markdown("<b style='color: #e8eaed; font-size: 1.05rem;'>🎭 Konuşma Tarzı (Persona)</b>", unsafe_allow_html=True)
     secilen_tarz = st.selectbox(
         "Tarz Seç", 
         [
@@ -285,20 +286,20 @@ with st.sidebar:
             "Sakin / Bilge ve Profesyonel", 
             "Sinirli / Huysuz ve Sabırsız", 
             "Heyecanlı / Hiperaktif", 
-            "Soğuk / Robotik ve Net"
+            "Soğuk / Robotik و Net"
         ], 
         label_visibility="collapsed"
     )
     
-    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem; margin-top: 15px; display: block;'>🗣️ Nöral Ses Tipi (İnsansı)</b>", unsafe_allow_html=True)
+    st.markdown("<b style='color: #e8eaed; font-size: 1.05rem; margin-top: 15px; display: block;'>🗣️ Nöral Ses Tipi (İnsansı)</b>", unsafe_allow_html=True)
     neural_ses = st.selectbox(
         "Ses Seç", 
         ["Emel (Doğal Kadın Sesi)", "Ahmet (Doğal Erkek Sesi)"], 
         label_visibility="collapsed"
     )
     
-    # --- SÜRPRİZ ÖZELLİK: SESLİ KOMUT (MICROPHONE SPEECH RECOGNITION) ---
-    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem; margin-top: 15px; display: block;'>🎤 Sesli Komut (Sürpriz Özellik)</b>", unsafe_allow_html=True)
+    # --- SESLİ KOMUT ÖZELLİĞİ ---
+    st.markdown("<b style='color: #e8eaed; font-size: 1.05rem; margin-top: 15px; display: block;'>🎤 Chrome Sesli Arama</b>", unsafe_allow_html=True)
     st.markdown("""
         <script>
         function startDictation() {
@@ -320,13 +321,13 @@ with st.sidebar:
             }
         }
         </script>
-        <button onclick="startDictation()" style="width: 100%; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
-        🎙️ Mikrofonla Soru Söyle
+        <button onclick="startDictation()" style="width: 100%; background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
+        🎙️ Mikrofonla Konuş
         </button>
     """, unsafe_allow_html=True)
 
     st.write("")
-    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>💬 Aktif Oturumlar</b>", unsafe_allow_html=True)
+    st.markdown("<b style='color: #e8eaed; font-size: 1.05rem;'>💬 Aktif Sekmeler</b>", unsafe_allow_html=True)
     chat_list = list(st.session_state.chats.keys())
     selected_chat = st.selectbox("Geçiş Yap:", chat_list, index=chat_list.index(st.session_state.current_chat), label_visibility="collapsed")
     if selected_chat != st.session_state.current_chat:
@@ -334,8 +335,8 @@ with st.sidebar:
         st.rerun()
 
     col_btn1, col_btn2 = st.columns(2)
-    if col_btn1.button("➕ Yeni Soru", use_container_width=True):
-        new_name = f"Sohbet {len(st.session_state.chats) + 1}"
+    if col_btn1.button("➕ Yeni Sekme", use_container_width=True):
+        new_name = f"Sekme {len(st.session_state.chats) + 1}"
         st.session_state.chats[new_name] = []
         st.session_state.current_chat = new_name
         st.session_state.image_seed = random.randint(1, 99999999)
@@ -346,7 +347,7 @@ with st.sidebar:
         
     st.write("---")
     
-    st.markdown("<h3 style='color: #38bdf8; font-size: 1.2rem; margin-top:10px;'>🧰 Araç Kutusu</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #8ab4f8; font-size: 1.2rem; margin-top:10px;'>🧰 Chrome Araçları</h3>", unsafe_allow_html=True)
     
     if st.button("🎲 Seed Yenile", use_container_width=True):
         st.session_state.image_seed = random.randint(1, 99999999)
@@ -397,7 +398,7 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v3.4 AKTİF")
+    st.info("🌐 Chrome Eyx AI v3.6 AKTİF")
 
 # --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):
@@ -414,7 +415,7 @@ for idx, msg in enumerate(st.session_state.messages):
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
         if msg.get("is_composite") and "image_bytes" in msg:
-            st.image(msg["image_bytes"], use_container_width=True, caption="Eyx AI - Soru Çıktısı")
+            st.image(msg["image_bytes"], use_container_width=True, caption="Chrome Eyx AI - Soru Çıktısı")
             st.download_button(
                 label="📥 Soruyu İndir (PNG)",
                 data=msg["image_bytes"],
@@ -445,7 +446,7 @@ for idx, msg in enumerate(st.session_state.messages):
                             st.error(f"Ses hatası: {e}")
 
 # --- ANA ETKİLEŞİM INPUTU ---
-if user_query := st.chat_input("Bir şeyler sor..."):
+if user_query := st.chat_input("Google'da ara veya bir şeyler sor..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
 # --- YANIT MOTORU ---
@@ -477,14 +478,10 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
     # --- EASTER EGG KONTROLÜ ---
     easter_egg_yaniti = None
-    if "sancak altuntaş mal" in user_query_lower:
+    if "sancak altuntaş mal" in user_query_lower or user_query_lower == "sancak altuntaş mal":
         easter_egg_yaniti = "Evet aga"
-    elif "hürşit" in user_query_lower and "bullshit" in user_query_lower:
-        easter_egg_yaniti = "bullshit"
-    elif user_query_lower == "sancak altuntaş mal":
-        easter_egg_yaniti = "Evet aga"
-    elif user_query_lower == "hürşit":
-        easter_egg_yaniti = "bullshit"
+    elif "hürşit" in user_query_lower or user_query_lower == "hürşit":
+        easter_egg_yaniti = "hurhurkirkur"
 
     if easter_egg_yaniti:
         st.session_state.messages.append({"role": "assistant", "content": easter_egg_yaniti})
@@ -492,7 +489,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
     elif is_question_intent:
         st.markdown("""
-        <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;">
+        <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%); color: white;">
             ⏳ Soru hazırlanıyor...
             <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         </div>
@@ -582,10 +579,11 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         st.rerun()
             
     else:
-        with st.spinner("Yanıtlanıyor..."):
+        with st.spinner("Google Chrome tarıyor..."):
             system_instruction = (
-                f"Sen bir yapay zeka asistanısın. {persona_talimati} "
+                f"Sen bir Google Chrome destekli yapay zeka asistanısın. {persona_talimati} "
                 "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
+                "Futbolcuları, ünlüleri, biyografileri ve tüm güncel bilgileri Google Chrome canlı arama sonuçlarından anında çekip eksiksiz tanı. "
                 "Asla kullanıcıyı harici web sitelerine veya linklere yönlendirme; bilgileri en güvenilir kaynaklardan süzerek doğrudan net cevabı kendin ver."
             )
             görsel_parçası = None
@@ -602,4 +600,4 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
 # --- ALT BİLGİ ---
 st.write("---")
-st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem;'>Eyx AI © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #9aa0a6; font-size: 0.9rem;'>Google Chrome Engine - Eyx AI © 2026</p>", unsafe_allow_html=True)

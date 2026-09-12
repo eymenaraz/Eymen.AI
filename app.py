@@ -14,7 +14,7 @@ import pytz
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v7.5 Easter Egg Edition",
+    page_title="Eyx AI - v7.6 Clean Edition",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -81,23 +81,12 @@ st.markdown("""
         margin-bottom: 15px;
     }
     .file-preview-text { color: #f8fafc; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }
-    
-    .core-status-box {
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(139, 92, 246, 0.4);
-        padding: 10px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        font-size: 0.85rem;
-        color: #c084fc;
-        text-align: center;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Gemini 2.5 Flash & Absolute Time Engine</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Clean Master Edition (2026)</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -159,10 +148,7 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         if bulunan_web:
             web_bilgisi = f"\n[Güncel Canlı Veri / Web Bilgisi]: {bulunan_web}"
 
-    evolution_prompt = (
-        f"Kullanıcı mesajı: '{sorgu}'. Bu mesajı incele ve yapay zekanın bu soruya en kusursuz şekilde cevap verebilmesi için "
-        f"hangi uzmanlık kimliğine bürünmesi gerektiğini 5-10 kelimelik net bir dinamik rol tanımı olarak Türkçe ver."
-    )
+    evolution_prompt = f"Kullanıcı mesajı: '{sorgu}'. Bu mesajı incele ve en uygun uzmanlık rolünü kısa bir Türkçe tanım olarak ver."
     
     aktif_key_temp = None
     for i in range(1, 11):
@@ -184,7 +170,6 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         f"🚨 KESİN ZAMAN KURALI 🚨:\n"
         f"Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
         f"Kullanıcı tarih, saat veya anlık bir durum sorduğunda ASLA geçmiş yılları baz alma. Mutlaka yukarıdaki anı ({an_zaman}) baz al.\n\n"
-        f"[Dinamik Çekirdek Uzmanlık]: {st.session_state.dynamic_persona_state}\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
     
@@ -305,15 +290,9 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
 # --- SIDEBAR KONTROL PANELİ ---
 with st.sidebar:
     st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🛠️ MENÜ</h2>", unsafe_allow_html=True)
-    
-    st.markdown(f"""
-        <div class="core-status-box">
-            <b>🧠 Self-Evolving Çekirdek:</b><br>{st.session_state.dynamic_persona_state}
-        </div>
-    """, unsafe_allow_html=True)
-    
     st.write("---")
     
+    # --- KONUŞMA TARZI VE SES TİPİ SEÇİMİ ---
     st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>🎭 Konuşma Tarzı (Persona)</b>", unsafe_allow_html=True)
     secilen_tarz = st.selectbox(
         "Tarz Seç", 
@@ -324,6 +303,13 @@ with st.sidebar:
             "Heyecanlı / Hiperaktif", 
             "Soğuk / Robotik ve Net"
         ], 
+        label_visibility="collapsed"
+    )
+    
+    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem; margin-top: 15px; display: block;'>🗣️ Ses Tipi (Erkek / Kadın)</b>", unsafe_allow_html=True)
+    ses_cinsiyeti = st.selectbox(
+        "Ses Seç", 
+        ["Otomatik / Cihaz Varsayılanı", "Erkek Ses Tonu", "Kadın Ses Tonu"], 
         label_visibility="collapsed"
     )
     
@@ -399,9 +385,9 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v7.5 EASTER EGG AKTİF")
+    st.info("🚀 EYX AI v7.6 CLEAN AKTİF")
 
-# --- MESAJLARI GÖSTERME ---
+# --- MESAJLARI GÖSTERME (Sesli Okuma & Cinsiyet Filtreli) ---
 for idx, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -435,7 +421,23 @@ for idx, msg in enumerate(st.session_state.messages):
                             let utterance = new SpeechSynthesisUtterance(text);
                             utterance.lang = 'tr-TR';
                             utterance.rate = 1.0;
-                            window.speechSynthesis.speak(utter);
+                            
+                            let voices = window.speechSynthesis.getVoices();
+                            let selectedVoice = voices.find(v => v.lang.includes('tr'));
+                            
+                            if (voices.length > 0) {{
+                                let genderChoice = "{ses_cinsiyeti}";
+                                if (genderChoice.includes("Erkek")) {{
+                                    let maleVoice = voices.find(v => v.lang.includes('tr') && (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('ahmet') || v.name.toLowerCase().includes('kaan')));
+                                    if (maleVoice) selectedVoice = maleVoice;
+                                }} else if (genderChoice.includes("Kadın")) {{
+                                    let femaleVoice = voices.find(v => v.lang.includes('tr') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('yelda') || v.name.toLowerCase().includes('cemre') || v.name.toLowerCase().includes('zeynep')));
+                                    if (femaleVoice) selectedVoice = femaleVoice;
+                                }}
+                            }}
+                            if (selectedVoice) utterance.voice = selectedVoice;
+                            
+                            window.speechSynthesis.speak(utterance);
                         }} else {{
                             alert("Tarayıcınız ses sentezlemeyi desteklemiyor.");
                         }}
@@ -483,7 +485,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         easter_egg_yaniti = "Evet aga"
     elif "hürşit" in user_query_lower and "bullshit" in user_query_lower:
         easter_egg_yaniti = "bullshit"
-    # Alternatif doğrudan eşleşmeler için
     elif user_query_lower == "sancak altuntaş mal":
         easter_egg_yaniti = "Evet aga"
     elif user_query_lower == "hürşit":

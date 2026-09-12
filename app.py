@@ -22,7 +22,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- KALICI HAFIZA & STATE YÖNETİMİ ---
+# --- KALICI HAFIZA & STATE YÖNETİMİ (localStorage Destekli) ---
 if "chats" not in st.session_state:
     st.session_state.chats = {
         "Genel Sohbet": [],
@@ -59,11 +59,12 @@ if "image_seed" not in st.session_state:
 if "uploaded_file_data" not in st.session_state:
     st.session_state.uploaded_file_data = None
 
+# Kalıcılık (localStorage Entegrasyonu)
 if "user_email" not in st.session_state:
     st.session_state.user_email = None
 
 if "user_permissions" not in st.session_state:
-    st.session_state.user_permissions = []
+    st.session_state.user_permissions = ["gmail", "photos"]
 
 GUNUN_SOZLERI = [
     "🚀 Kodunu yaz, sınırları zorla, geleceği şekillendir.",
@@ -225,6 +226,25 @@ st.markdown(f"""
     .file-preview-text {{ color: {t_text}; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }}
 </style>
 """, unsafe_allow_html=True)
+
+# --- TARAYICI BELLEĞİ (LocalStorage) KONTROLÜ ---
+# Sayfa yenilense veya kapatılıp açılsa bile bilgileri korumak için JavaScript localStorage köprüsü kurulur
+st.markdown("""
+<script>
+    // localStorage'dan kayıtlı verileri okuma ve aktarma simülasyonu
+    const savedEmail = localStorage.getItem('eyx_user_email');
+    if (savedEmail && !window.location.search.includes('email=')) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('email', savedEmail);
+        window.history.replaceState({}, '', url);
+    }
+</script>
+""", unsafe_allow_html=True)
+
+# URL / LocalStorage Parametrelerini Yakala
+query_params = st.query_params
+if "email" in query_params and not st.session_state.user_email:
+    st.session_state.user_email = query_params["email"]
 
 # --- BAŞLIK VE KARŞILAMA ---
 st.markdown('<div class="logo-container"><span class="brand-eyx">Eyx</span><span class="brand-ai">AI</span></div>', unsafe_allow_html=True)
@@ -463,7 +483,7 @@ with st.sidebar:
     st.markdown("<h2 style='color: #818cf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>⚡ Eyx AI Menü</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    # Hesap & Giriş Bölümü
+    # Hesap & Giriş Bölümü (Kalıcı)
     st.markdown("<b style='font-size: 1.05rem;'>👤 Hesap & Google Bağlantısı</b>", unsafe_allow_html=True)
     
     if st.session_state.user_email:
@@ -487,11 +507,18 @@ with st.sidebar:
         if st.button("Hesaptan Çıkış Yap", use_container_width=True):
             st.session_state.user_email = None
             st.session_state.user_permissions = []
+            st.query_params.clear()
+            # Tarayıcı hafızasını da temizle
+            st.markdown("""
+            <script>
+                localStorage.removeItem('eyx_user_email');
+                window.location.href = window.location.pathname;
+            </script>
+            """, unsafe_allow_html=True)
             st.rerun()
     else:
-        st.markdown("<p style='font-size: 0.85rem; opacity: 0.7;'>Google hesabınızı girerek Eyx AI sistemine bağlanın.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 0.85rem; opacity: 0.7;'>Google hesabınızı girerek Eyx AI sistemine bağlanın (Kalıcı kalır).</p>", unsafe_allow_html=True)
         
-        # Resmi Google Logolu HTML Buton Görseli
         st.markdown(f"""
             <div class="google-login-container">
                 <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo"/>
@@ -499,14 +526,23 @@ with st.sidebar:
             </div>
         """, unsafe_allow_html=True)
         
-        # Sahte e-postalar yerine kullanıcının kendi e-postasını temizce girebilmesi için input
         girilen_eposta = st.text_input("E-posta Adresiniz:", placeholder="ornek@gmail.com", label_visibility="collapsed")
         
         if st.button("Google ile Bağlan", use_container_width=True):
             if girilen_eposta and "@" in girilen_eposta:
-                st.session_state.user_email = girilen_eposta.strip()
+                clean_email = girilen_eposta.strip()
+                st.session_state.user_email = clean_email
                 st.session_state.user_permissions = ["gmail", "photos"]
-                st.success(f"{st.session_state.user_email} başarıyla bağlandı!")
+                
+                # Tarayıcı localStorage hafızasına kaydet (Uygulamadan çıkılsa bile kalıcı olması için)
+                st.markdown(f"""
+                <script>
+                    localStorage.setItem('eyx_user_email', '{clean_email}');
+                </script>
+                """, unsafe_allow_html=True)
+                
+                st.query_params["email"] = clean_email
+                st.success(f"{clean_email} başarıyla bağlandı!")
                 st.rerun()
             else:
                 st.error("Lütfen geçerli bir e-posta adresi girin.")
@@ -753,7 +789,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         if img_success and raw_image_bytes:
             st.session_state.messages.append({
                 "role": "assistant", 
-                "content": "İşte görselin aradığın kalitede hazır! 🎨", 
+                "content": "İşte görselin hazır! 🎨", 
                 "image_bytes": raw_image_bytes,
                 "is_composite": False
             })
@@ -793,4 +829,4 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
 # --- ALT BİLGİ ---
 st.write("---")
-st.markdown("<p style='text-align: center; font-size: 0.9rem; opacity: 0.7;'>Eyx AI Studio © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 0.9rem; opacity: 0.7;'>Eyx AI  © 2026</p>", unsafe_allow_html=True)

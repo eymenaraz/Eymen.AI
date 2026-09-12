@@ -11,10 +11,13 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 from datetime import datetime
 import pytz
+import asyncio
+import edge-tts if False else __import__('edge_tts')
+import tempfile
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v8.3 Native Voice Edition",
+    page_title="Eyx AI - v8.4 Edge Neural Voice Edition",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -86,7 +89,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Native Voice Edition (2026)</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Edge Neural Voice Edition (2026)</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -284,6 +287,13 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     
+    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem; margin-top: 15px; display: block;'>🗣️ Nöral Ses Tipi (İnsansı)</b>", unsafe_allow_html=True)
+    neural_ses = st.selectbox(
+        "Ses Seç", 
+        ["Emel (Doğal Kadın Sesi)", "Ahmet (Doğal Erkek Sesi)"], 
+        label_visibility="collapsed"
+    )
+    
     st.write("")
     st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>💬 Aktif Oturumlar</b>", unsafe_allow_html=True)
     chat_list = list(st.session_state.chats.keys())
@@ -356,9 +366,18 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v8.3 NATIVE VOICE AKTİF")
+    st.info("🚀 EYX AI v8.4 NEURAL VOICE AKTİF")
 
-# --- MESAJLARI GÖSTERME (Akıcı Tarayıcı Ses Entegrasyonlu) ---
+# --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
+async def generate_edge_audio_bytes(text, voice_id):
+    communicate = edge_tts.Communicate(text, voice_id)
+    audio_data = bytearray()
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            audio_data.extend(chunk["data"])
+    return bytes(audio_data)
+
+# --- MESAJLARI GÖSTERME ---
 for idx, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -382,35 +401,18 @@ for idx, msg in enumerate(st.session_state.messages):
             if msg.get("content"):
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
                 
-                # Kibar, akıcı ve optimize edilmiş yerleşik ses butonu
-                safe_text = msg["content"].replace('"', '\\"').replace('\n', ' ').replace("'", "\\'")
-                st.markdown(f"""
-                    <script>
-                    function playNativeVoice_{idx}() {{
-                        if ('speechSynthesis' in window) {{
-                            window.speechSynthesis.cancel();
-                            let text = "{safe_text}";
-                            let utterance = new SpeechSynthesisUtterance(text);
-                            utterance.lang = 'tr-TR';
-                            utterance.rate = 1.0; 
-                            utterance.pitch = 1.0;
-                            
-                            let voices = window.speechSynthesis.getVoices();
-                            let trVoice = voices.find(v => v.lang.includes('tr') || v.lang.includes('TR'));
-                            if (trVoice) {{
-                                utterance.voice = trVoice;
-                            }}
-                            
-                            window.speechSynthesis.speak(utterance);
-                        }} else {{
-                            alert("Tarayıcınız ses sentezlemeyi desteklemiyor.");
-                        }}
-                    }}
-                    </script>
-                    <button onclick="playNativeVoice_{idx}()" style="background: rgba(30, 41, 59, 0.8); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-bottom: 8px; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;">
-                    🔊 Sesli Dinle
-                    </button>
-                """, unsafe_allow_html=True)
+                # Nöral İnsansı Ses Dinleme Butonu
+                if st.button(f"🔊 Sesli Dinle", key=f"neural_audio_{idx}"):
+                    with st.spinner("Nöral insan sesi sentezleniyor..."):
+                        try:
+                            v_name = "tr-TR-EmelNeural" if "Kadın" in neural_ses else "tr-TR-AhmetNeural"
+                            raw_audio = asyncio.run(generate_edge_audio_bytes(msg["content"][:600], v_name))
+                            if raw_audio:
+                                st.audio(raw_audio, format='audio/mp3', autoplay=True)
+                            else:
+                                st.error("Ses üretilemedi.")
+                        except Exception as e:
+                            st.error(f"Ses hatası: {e}")
 
 # --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Bir şeyler sor..."):

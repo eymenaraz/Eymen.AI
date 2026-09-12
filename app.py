@@ -16,7 +16,7 @@ import edge_tts
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI",
+    page_title="Eyx AI Studio",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -88,7 +88,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eyx">Eyx</span><span class="brand-ai">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">v3.9 - Neural Studio</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">v3.11 - Neural Studio</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -110,13 +110,19 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- ARKA PLAN CHROME MOTORU (WEB ARAMA) ---
+# --- ARKA PLAN MOTORU (WEB ARAMA) ---
 def chrome_motoru_ile_ara(sorgu):
     try:
         sorgu_terimi = sorgu
-        sport_keywords = ["maç", "skor", "futbol", "puan durumu", "fikstür", "basketbol", "canlı skor", "iddaa", "şampiyonlar ligi", "lig", "süper lig", "gol", "oynadı", "kaç kaç bitti"]
-        if any(k in sorgu.lower() for k in sport_keywords):
-            sorgu_terimi = f"site:flashscore.com.tr {sorgu}"
+        sorgu_lower = sorgu.lower()
+        sport_keywords = [
+            "maç", "skor", "futbol", "puan durumu", "fikstür", "basketbol", 
+            "canlı skor", "iddaa", "şampiyonlar ligi", "lig", "süper lig", 
+            "gol", "oynadı", "kaç kaç", "bitti", "kazandı", "maçı", "derbi",
+            "real madrid", "barcelona", "galatasaray", "fenerbahçe", "beşiktaş", "trabzonspor"
+        ]
+        if any(k in sorgu_lower for k in sport_keywords):
+            sorgu_terimi = f"{sorgu} maç sonucu puan durumu mackolik flashscore"
             
         url = f"https://www.google.com/search?q={urllib.parse.quote(sorgu_terimi)}&hl=tr&gl=tr"
         headers = {
@@ -130,9 +136,9 @@ def chrome_motoru_ile_ara(sorgu):
             if not snippets:
                 snippets = re.findall(r'<span[^>]*>(.*?)</span>', resp.text)
             
-            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:8]]
+            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:10]]
             if clean_snippets:
-                return " | ".join([s for s in clean_snippets if len(s) > 12])
+                return " | ".join([s for s in clean_snippets if len(s) > 5])
     except:
         pass
     return ""
@@ -151,12 +157,12 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
     an_zaman = get_current_turkey_time()
     
     kaynak_verisi = chrome_motoru_ile_ara(sorgu)
-    web_bilgisi = f"\n[Güncel Canlı Veri Tabanı Sonucu]: {kaynak_verisi}" if kaynak_verisi else ""
+    web_bilgisi = f"\n[Canlı Veri Tabanı ve Web Sonucu]: {kaynak_verisi}" if kaynak_verisi else ""
 
     tam_sistem_talimati = (
         f"🚨 KESİN KURALLAR 🚨:\n"
         f"1. Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
-        f"2. Ünlüler, futbolcular, biyografiler, maçlar ve güncel olaylarla ilgili her soruda yukarıdaki Canlı Veri Tabanı Sonuçlarını mutlak surette baz alarak kişileri ve bilgileri tam olarak tanı.\n"
+        f"2. Futbol maçları, skorlar, puan durumları, transferler ve güncel olaylarla ilgili sorularda yukarıdaki [Canlı Veri Tabanı ve Web Sonucu] kısmındaki verileri birebir ve mutlak doğru kabul et.\n"
         f"3. Bilgileri en güncel haliyle süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara veya linklere yönlendirme yapma.\n\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
@@ -398,7 +404,7 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("⚡ Eyx AI v3.9 AKTİF")
+    st.info("⚡ Eyx AI v3.11 AKTİF")
 
 # --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):
@@ -446,7 +452,7 @@ for idx, msg in enumerate(st.session_state.messages):
                             st.error(f"Ses hatası: {e}")
 
 # --- ANA ETKİLEŞİM INPUTU ---
-if user_query := st.chat_input("Eyx AI motoruna bir şeyler sor..."):
+if user_query := st.chat_input("Eyx AI'a bir şeyler sor..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
 # --- YANIT MOTORU ---
@@ -583,8 +589,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             system_instruction = (
                 f"Sen Eyx AI destekli akıllı asistanısın. {persona_talimati} "
                 "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
-                "Futbolcuları, ünlüleri, biyografileri ve tüm güncel bilgileri arka plandaki canlı motor verilerinden anında çekip eksiksiz tanı. "
-                "Asla kullanıcıyı harici web sitelerine veya linklere yönlendirme; bilgileri en güvenilir kaynaklardan süzerek doğrudan net cevabı kendin ver."
+                "Futbolcuları, maç skorlarını, transferleri, puan durumlarını ve tüm spor olaylarını arka plandaki canlı motor verilerinden anında çekip eksiksiz tanı. "
+                "Asla kullanıcıyı harici web sitelerine veya linklere yönlendirme; bilgileri en güncel haliyle süzerek doğrudan net cevabı kendin ver."
             )
             görsel_parçası = None
             if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):

@@ -123,11 +123,11 @@ st.markdown(f"""
     .subtitle {{ color: #94a3b8; text-align: center; font-size: 1.1rem; font-weight: 500; margin-bottom: 15px; }}
     .typing-dots {{ display: inline-flex; align-items: center; margin-left: 8px; }}
     .dot {{ width: 6px; height: 6px; background-color: #818cf8; border-radius: 50%; margin: 0 2px; animation: bounce 1.4s infinite ease-in-out both; }}
-    .dot:nth-child(1) { animation-delay: -0.32s; }
-    .dot:nth-child(2) { animation-delay: -0.16s; }
-    @keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+    .dot:nth-child(1) {{ animation-delay: -0.32s; }}
+    .dot:nth-child(2) {{ animation-delay: -0.16s; }}
+    @keyframes bounce {{ 0%, 80%, 100% {{ transform: scale(0); opacity: 0.4; }} 40% {{ transform: scale(1); opacity: 1; }} }}
 
-    .file-preview-card {
+    .file-preview-card {{
         position: relative;
         background: rgba(20, 21, 26, 0.7);
         border: 1px solid rgba(129, 140, 248, 0.3);
@@ -137,12 +137,12 @@ st.markdown(f"""
         align-items: center;
         gap: 10px;
         margin-bottom: 15px;
-    }
-    .file-preview-text { color: #e2e8f0; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }
+    }}
+    .file-preview-text {{ color: #e2e8f0; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }}
 </style>
 """, unsafe_allow_html=True)
 
-# --- BAŞLIK VE KARIŞILAMA ---
+# --- BAŞLIK VE KARŞILAMA ---
 st.markdown('<div class="logo-container"><span class="brand-eyx">Eyx</span><span class="brand-ai">AI</span></div>', unsafe_allow_html=True)
 st.markdown(f'<p class="subtitle">Aktif Sekme: <b>{st.session_state.current_chat}</b></p>', unsafe_allow_html=True)
 

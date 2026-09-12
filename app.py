@@ -88,7 +88,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">v3.3</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">v3.4</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -110,17 +110,14 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- GOOGLE CHROME TABANLI GÜÇLÜ ARAMA MOTORU ---
+# --- CHROME TABANLI GÜÇLÜ ARAMA MOTORU ---
 def akilli_kaynak_ara(sorgu):
     try:
         sorgu_terimi = sorgu
         sport_keywords = ["maç", "skor", "futbol", "puan durumu", "fikstür", "basketbol", "canlı skor", "iddaa", "şampiyonlar ligi", "lig", "süper lig", "gol", "oynadı", "kaç kaç bitti"]
-        
-        # Spor sorgularında doğrudan Google üzerinden flashscore verilerini ara
         if any(k in sorgu.lower() for k in sport_keywords):
             sorgu_terimi = f"site:flashscore.com.tr {sorgu}"
             
-        # Google arama motoru uç noktası (Gerçek Google Chrome User-Agent ile)
         url = f"https://www.google.com/search?q={urllib.parse.quote(sorgu_terimi)}&hl=tr"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
@@ -128,7 +125,6 @@ def akilli_kaynak_ara(sorgu):
         resp = requests.get(url, headers=headers, timeout=5)
         if resp.status_code == 200:
             import re
-            # Google arama sonuçlarından snippet metinlerini çek
             snippets = re.findall(r'<div[^>]*class="BNeawe s3v9rd AP7Wnd"[^>]*>(.*?)</div>', resp.text)
             if not snippets:
                 snippets = re.findall(r'<span[^>]*>(.*?)</span>', resp.text)
@@ -154,13 +150,13 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
     an_zaman = get_current_turkey_time()
     
     kaynak_verisi = akilli_kaynak_ara(sorgu)
-    web_bilgisi = f"\n[Google Chrome Canlı Arama Sonucu]: {kaynak_verisi}" if kaynak_verisi else ""
+    web_bilgisi = f"\n[Google Canlı Arama Sonucu]: {kaynak_verisi}" if kaynak_verisi else ""
 
     tam_sistem_talimati = (
         f"🚨 KESİN KURALLAR 🚨:\n"
         f"1. Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
-        f"2. Spor, maç sonuçları, fikstür ve skor sorularında yukarıdaki Google arama sonuçlarını (Flashscore ve resmi spor siteleri odaklı) mutlak surette baz al.\n"
-        f"3. Diğer tüm konularda en güncel ve kaliteli bilgileri süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla kullanıcıyı 'şuraya bakın', 'şu siteyi ziyaret edin' gibi dış kaynaklara veya linklere **yönlendirme yapma**.\n\n"
+        f"2. Spor, maç sonuçları, fikstür ve skor sorularında yukarıdaki Google arama sonuçlarını (Flashscore odaklı) mutlak surette baz al.\n"
+        f"3. Diğer tüm konularda en güncel bilgileri süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara veya linklere yönlendirme yapma.\n\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
     
@@ -301,6 +297,34 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     
+    # --- SÜRPRİZ ÖZELLİK: SESLİ KOMUT (MICROPHONE SPEECH RECOGNITION) ---
+    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem; margin-top: 15px; display: block;'>🎤 Sesli Komut (Sürpriz Özellik)</b>", unsafe_allow_html=True)
+    st.markdown("""
+        <script>
+        function startDictation() {
+            if (window.hasOwnProperty('webkitSpeechRecognition')) {
+                var recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = "tr-TR";
+                recognition.start();
+                recognition.onresult = function(e) {
+                    document.querySelector('textarea[data-testid="stChatInput"]').value = e.results[0][0].transcript;
+                    recognition.stop();
+                };
+                recognition.onerror = function(e) {
+                    recognition.stop();
+                }
+            } else {
+                alert("Tarayıcınız ses tanımayı desteklemiyor (Chrome kullanın).");
+            }
+        }
+        </script>
+        <button onclick="startDictation()" style="width: 100%; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
+        🎙️ Mikrofonla Soru Söyle
+        </button>
+    """, unsafe_allow_html=True)
+
     st.write("")
     st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>💬 Aktif Oturumlar</b>", unsafe_allow_html=True)
     chat_list = list(st.session_state.chats.keys())
@@ -373,7 +397,7 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v3.3 AKTİF")
+    st.info("🚀 EYX AI v3.4 AKTİF")
 
 # --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):

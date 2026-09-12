@@ -6,9 +6,10 @@ google-generativeai
 pytz
 streamlit
 openai
-requests
-gtts
-pytz
+streamlit
 google-generativeai
 requests
 pillow
+pytz
+edge-tts
+

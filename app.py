@@ -13,7 +13,7 @@ from datetime import datetime
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v4.2 Persona & Voice",
+    page_title="Eyx AI - v2.1 SEC Edition",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -29,6 +29,10 @@ if "image_seed" not in st.session_state:
 
 if "uploaded_file_data" not in st.session_state:
     st.session_state.uploaded_file_data = None
+
+# Yapay zekanın o anki evrilmiş dinamik karakter hafızası
+if "dynamic_persona_state" not in st.session_state:
+    st.session_state.dynamic_persona_state = "Standart Dengeli Asistan"
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
@@ -76,17 +80,24 @@ st.markdown("""
         gap: 10px;
         margin-bottom: 15px;
     }
-    .file-preview-text {
-        color: #f8fafc;
-        font-size: 0.95rem;
-        font-family: 'Segoe UI', system-ui, sans-serif;
+    .file-preview-text { color: #f8fafc; font-size: 0.95rem; font-family: 'Segoe UI', system-ui, sans-serif; }
+    
+    .core-status-box {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(139, 92, 246, 0.4);
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        font-size: 0.85rem;
+        color: #c084fc;
+        text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Sınırsız Zaman, Dinamik Kişilikler ve Sesli Asistan</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Self-Evolving Core & Strict Isolation Master</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -108,38 +119,66 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- AKILLI CANLI WEB ARAMA MOTORU ---
+# --- GELİŞMİŞ ANLIK WEB ARAMA MOTORU ---
 def canli_web_ara(sorgu):
     try:
         url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(sorgu)}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        resp = requests.get(url, headers=headers, timeout=4)
+        resp = requests.get(url, headers=headers, timeout=5)
         if resp.status_code == 200:
             import re
             snippets = re.findall(r'<a class="result__snippet[^>]*>(.*?)</a>', resp.text)
-            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:3]]
+            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:4]]
             if clean_snippets:
                 return " | ".join(clean_snippets)
     except:
         pass
     return ""
 
-# --- HIZLI GEMINI ÇAĞIRICI ---
+# --- HIZLI GEMINI ÇAĞIRICI (SELF-EVOLVING CORE ENTEGRE) ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
     son_hata = "API anahtarı bulunamadı."
     an_zaman = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     web_bilgisi = ""
-    trigger_words = ["kimdir", "nedir", "son durum", "haber", "güncel", "bugün", "kaç", "ne zaman", "skor", "2026"]
+    trigger_words = [
+        "kimdir", "nedir", "son durum", "haber", "güncel", "bugün", "kaç", "ne zaman", 
+        "skor", "maç", "oyuncu", "futbolcu", "transfer", "2026", "tarih", "şimdi", "gecenin"
+    ]
     if any(k in sorgu.lower() for k in trigger_words):
         bulunan_web = canli_web_ara(sorgu)
         if bulunan_web:
-            web_bilgisi = f"\n[Anlık Web Bilgisi]: {bulunan_web}"
+            web_bilgisi = f"\n[Güncel Canlı Veri / Web Bilgisi]: {bulunan_web}"
+
+    # --- SELF-EVOLVING DİNAMİK ÇEKİRDEK ANALİZİ ---
+    # Yapay zekanın kendi çekirdeğini o anki mesaja göre evriltmesi için niyet tespiti
+    evolution_prompt = (
+        f"Kullanıcı mesajı: '{sorgu}'. Bu mesajı incele ve yapay zekanın bu soruya en kusursuz şekilde cevap verebilmesi için "
+        f"hangi uzmanlık kimliğine bürünmesi gerektiğini 5-10 kelimelik net bir dinamik rol tanımı olarak Türkçe ver. "
+        f"Örn: 'Kıdemli Yazılım Mimarı ve Kod Optimizasyon Uzmanı' veya 'Derin Felsefe ve Mantık Analisti'."
+    )
+    
+    aktif_key_temp = None
+    for i in range(1, 11):
+        if f"KEY_{i}" in st.secrets:
+            aktif_key_temp = st.secrets[f"KEY_{i}"]
+            break
+            
+    if aktif_key_temp:
+        try:
+            genai.configure(api_key=aktif_key_temp)
+            eval_model = genai.GenerativeModel("gemini-2.5-flash")
+            eval_res = eval_model.generate_content(evolution_prompt)
+            if eval_res and eval_res.text:
+                st.session_state.dynamic_persona_state = eval_res.text.strip()
+        except:
+            pass
 
     tam_sistem_talimati = (
-        f"Şu anki sistem saati referansı: {an_zaman}. "
-        f"Sen geçmişteki tarihi olayları, bugünkü anlık durumu ve geleceğe dair planlamaları/öngörüleri tam olarak bilen evrensel bir yapay zekasın. "
-        f"Asla her olayı bugün oluyormuş gibi sabitleme; geçmişi geçmiş, geleceği gelecek, anı ise anlık olarak ele al.{web_bilgisi}\n{sistem_talimati}"
+        f"Şu anki gerçek dünya zamanı: {an_zaman}. "
+        f"[Dinamik Öz-Evrimleşen Çekirdek Modu / Aktif Uzmanlık]: {st.session_state.dynamic_persona_state}\n"
+        f"Sen sabit bir karakter değilsin; kullanıcının anlık niyetine göre zihnini ve yeteneklerini yukarıdaki aktif uzmanlık tanımına göre "
+        f"otonom olarak evrilten gelişmiş bir yapay zeka sistemisin.{web_bilgisi}\n{sistem_talimati}"
     )
     
     for i in range(1, 11):
@@ -259,6 +298,14 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
 # --- SIDEBAR KONTROL PANELİ ---
 with st.sidebar:
     st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🛠️ MENÜ</h2>", unsafe_allow_html=True)
+    
+    # --- SELF-EVOLVING ÇEKİRDEK ANLIK DURUM GÖSTERGESİ ---
+    st.markdown(f"""
+        <div class="core-status-box">
+            <b>🧠 Self-Evolving Çekirdek:</b><br>{st.session_state.dynamic_persona_state}
+        </div>
+    """, unsafe_allow_html=True)
+    
     st.write("---")
     
     # --- KİŞİLİK / KONUŞMA TARZI SEÇİMİ ---
@@ -304,6 +351,19 @@ with st.sidebar:
         
     st.write("") 
     
+    with st.expander("🌌 Quantum Canvas (Zihin Haritası)"):
+        canvas_konu = st.text_input("Fikir / Konu Girin:", placeholder="Örn: Yapay Zeka Evrimi")
+        if st.button("Harita Üret", use_container_width=True):
+            if canvas_konu:
+                with st.spinner("Kuantum fikirler haritalandırılıyor..."):
+                    map_prompt = f"'{canvas_konu}' konsepti için birbirine bağlı ana fikirleri, alt dalları ve stratejik adımları içeren detaylı bir zihin haritası (mind map) ve kreatif fikir analizi hazırla."
+                    map_yanit, _ = calistir_gemini(map_prompt, "Sen yaratıcı bir konsept mimarısın. Markdown formatında profesyonel, dallara ayrılmış bir zihin haritası metni çıkar.")
+                    st.session_state.messages.append({"role": "user", "content": f"Quantum Canvas Haritası: {canvas_konu}"})
+                    st.session_state.messages.append({"role": "assistant", "content": f"### 🌌 Quantum Canvas: {canvas_konu}\n\n{map_yanit}"})
+                    st.rerun()
+            else:
+                st.warning("Lütfen bir konu yazın.")
+
     with st.expander("🔗 QR Kod Oluşturucu"):
         qr_metin = st.text_input("Link veya Metin girin:")
         if st.button("Kodu Üret", use_container_width=True):
@@ -334,9 +394,9 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v4.2 AKTİF")
+    st.info("🚀 EYX AI v7.1 SELF-EVOLVING AKTİF")
 
-# --- MESAJLARI GÖSTERME (Güncellenmiş Sesli Okuma Sistemi) ---
+# --- MESAJLARI GÖSTERME (Sesli Okuma Sistemli) ---
 for idx, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -360,9 +420,7 @@ for idx, msg in enumerate(st.session_state.messages):
             if msg.get("content"):
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
                 
-                # Kararlı JavaScript Konuşma Sentezi (Tarayıcı uyumlu)
                 safe_text = msg["content"].replace('"', '\\"').replace('\n', ' ').replace("'", "\\'")
-                btn_key = f"tts_btn_{idx}"
                 st.markdown(f"""
                     <script>
                     function playSpeech_{idx}() {{
@@ -387,20 +445,21 @@ for idx, msg in enumerate(st.session_state.messages):
 if user_query := st.chat_input("Bir şeyler sor..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
-# --- YANIT MOTORU ---
+# --- YANIT MOTORU (KESİN İZOLASYON & SELF-EVOLVING ÇEKİRDEK) ---
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]
-    user_query_lower = user_query.lower()
+    user_query_lower = user_query.strip().lower()
     
     formatted_history = []
     for m in st.session_state.messages[:-1]:
         formatted_history.append({"role": "user" if m["role"] == "user" else "model", "parts": [m.get("content", "İstek.")]})
             
-    question_triggers = ["soru oluştur", "soru yaz", "soru hazırla", "sorusu hazırla", "sorusu yaz", "sorusu oluştur", "test hazırla", "deneme hazırla"]
-    image_keywords = ["görsel", "resim", "fotoğraf", "çiz", "yap", "oluştur", "tasarla", "portre", "manzara"]
+    # Katı tetikleyici ayrımları (Asla birbirine karışmaz)
+    question_triggers = ["lgs soru", "yks soru", "yeni nesil soru", "matematik sorusu", "fizik sorusu", "türkçe sorusu", "tarih sorusu"]
+    image_keywords = ["resim oluştur", "görsel oluştur", "fotoğraf oluştur", "çizim yap", "resim çiz", "görsel çiz"]
     
     is_question_intent = any(t in user_query_lower for t in question_triggers)
-    is_image_intent = (not is_question_intent) and any(kw in user_query_lower for kw in image_keywords)
+    is_image_intent = any(kw in user_query_lower for kw in image_keywords)
 
     # --- SEÇİLEN KİŞİLİK TARZINA GÖRE TALİMAT ÜRETİMİ ---
     persona_talimati = ""
@@ -511,7 +570,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             system_instruction = (
                 f"Sen bir yapay zeka asistanısın. {persona_talimati} "
                 "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
-                "Google araması yapıldı veya benzeri ifadeler asla kullanma."
+                "Kullanıcı standart sohbet veya bilgi sorusu soruyorsa doğrudan normal cevap ver, asla kendiliğinden zihin haritası veya şeması oluşturma."
             )
             görsel_parçası = None
             if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):

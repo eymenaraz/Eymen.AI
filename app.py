@@ -10,10 +10,11 @@ import requests
 from PIL import Image, ImageDraw, ImageFont
 import io
 from datetime import datetime
+import pytz
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v2.1 SEC Edition",
+    page_title="Eyx AI - v7.5 Easter Egg Edition",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -30,7 +31,6 @@ if "image_seed" not in st.session_state:
 if "uploaded_file_data" not in st.session_state:
     st.session_state.uploaded_file_data = None
 
-# Yapay zekanın o anki evrilmiş dinamik karakter hafızası
 if "dynamic_persona_state" not in st.session_state:
     st.session_state.dynamic_persona_state = "Standart Dengeli Asistan"
 
@@ -97,7 +97,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Self-Evolving Core & Strict Isolation Master</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Gemini 2.5 Flash & Absolute Time Engine</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -135,27 +135,33 @@ def canli_web_ara(sorgu):
         pass
     return ""
 
-# --- HIZLI GEMINI ÇAĞIRICI (SELF-EVOLVING CORE ENTEGRE) ---
+# --- KESİN VE DOĞRU TÜRKİYE SAATİ (UTC+3) ---
+def get_current_turkey_time():
+    try:
+        tr_tz = pytz.timezone('Europe/Istanbul')
+        tr_time = datetime.now(tr_tz)
+        return tr_time.strftime('%Y-%m-%d %H:%M:%S (%A)')
+    except:
+        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+# --- HIZLI GEMINI ÇAĞIRICI ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
     son_hata = "API anahtarı bulunamadı."
-    an_zaman = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    an_zaman = get_current_turkey_time()
     
     web_bilgisi = ""
     trigger_words = [
         "kimdir", "nedir", "son durum", "haber", "güncel", "bugün", "kaç", "ne zaman", 
-        "skor", "maç", "oyuncu", "futbolcu", "transfer", "2026", "tarih", "şimdi", "gecenin"
+        "skor", "maç", "oyuncu", "futbolcu", "transfer", "2026", "tarih", "şimdi", "gecenin", "saat", "bugün günlerden"
     ]
     if any(k in sorgu.lower() for k in trigger_words):
         bulunan_web = canli_web_ara(sorgu)
         if bulunan_web:
             web_bilgisi = f"\n[Güncel Canlı Veri / Web Bilgisi]: {bulunan_web}"
 
-    # --- SELF-EVOLVING DİNAMİK ÇEKİRDEK ANALİZİ ---
-    # Yapay zekanın kendi çekirdeğini o anki mesaja göre evriltmesi için niyet tespiti
     evolution_prompt = (
         f"Kullanıcı mesajı: '{sorgu}'. Bu mesajı incele ve yapay zekanın bu soruya en kusursuz şekilde cevap verebilmesi için "
-        f"hangi uzmanlık kimliğine bürünmesi gerektiğini 5-10 kelimelik net bir dinamik rol tanımı olarak Türkçe ver. "
-        f"Örn: 'Kıdemli Yazılım Mimarı ve Kod Optimizasyon Uzmanı' veya 'Derin Felsefe ve Mantık Analisti'."
+        f"hangi uzmanlık kimliğine bürünmesi gerektiğini 5-10 kelimelik net bir dinamik rol tanımı olarak Türkçe ver."
     )
     
     aktif_key_temp = None
@@ -175,10 +181,11 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
             pass
 
     tam_sistem_talimati = (
-        f"Şu anki gerçek dünya zamanı: {an_zaman}. "
-        f"[Dinamik Öz-Evrimleşen Çekirdek Modu / Aktif Uzmanlık]: {st.session_state.dynamic_persona_state}\n"
-        f"Sen sabit bir karakter değilsin; kullanıcının anlık niyetine göre zihnini ve yeteneklerini yukarıdaki aktif uzmanlık tanımına göre "
-        f"otonom olarak evrilten gelişmiş bir yapay zeka sistemisin.{web_bilgisi}\n{sistem_talimati}"
+        f"🚨 KESİN ZAMAN KURALI 🚨:\n"
+        f"Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
+        f"Kullanıcı tarih, saat veya anlık bir durum sorduğunda ASLA geçmiş yılları baz alma. Mutlaka yukarıdaki anı ({an_zaman}) baz al.\n\n"
+        f"[Dinamik Çekirdek Uzmanlık]: {st.session_state.dynamic_persona_state}\n"
+        f"{web_bilgisi}\n{sistem_talimati}"
     )
     
     for i in range(1, 11):
@@ -299,7 +306,6 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
 with st.sidebar:
     st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🛠️ MENÜ</h2>", unsafe_allow_html=True)
     
-    # --- SELF-EVOLVING ÇEKİRDEK ANLIK DURUM GÖSTERGESİ ---
     st.markdown(f"""
         <div class="core-status-box">
             <b>🧠 Self-Evolving Çekirdek:</b><br>{st.session_state.dynamic_persona_state}
@@ -308,7 +314,6 @@ with st.sidebar:
     
     st.write("---")
     
-    # --- KİŞİLİK / KONUŞMA TARZI SEÇİMİ ---
     st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>🎭 Konuşma Tarzı (Persona)</b>", unsafe_allow_html=True)
     secilen_tarz = st.selectbox(
         "Tarz Seç", 
@@ -394,9 +399,9 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v7.1 SELF-EVOLVING AKTİF")
+    st.info("🚀 EYX AI v7.5 EASTER EGG AKTİF")
 
-# --- MESAJLARI GÖSTERME (Sesli Okuma Sistemli) ---
+# --- MESAJLARI GÖSTERME ---
 for idx, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -445,7 +450,7 @@ for idx, msg in enumerate(st.session_state.messages):
 if user_query := st.chat_input("Bir şeyler sor..."):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
-# --- YANIT MOTORU (KESİN İZOLASYON & SELF-EVOLVING ÇEKİRDEK) ---
+# --- YANIT MOTORU ---
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     user_query = st.session_state.messages[-1]["content"]
     user_query_lower = user_query.strip().lower()
@@ -454,14 +459,12 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     for m in st.session_state.messages[:-1]:
         formatted_history.append({"role": "user" if m["role"] == "user" else "model", "parts": [m.get("content", "İstek.")]})
             
-    # Katı tetikleyici ayrımları (Asla birbirine karışmaz)
     question_triggers = ["lgs soru", "yks soru", "yeni nesil soru", "matematik sorusu", "fizik sorusu", "türkçe sorusu", "tarih sorusu"]
     image_keywords = ["resim oluştur", "görsel oluştur", "fotoğraf oluştur", "çizim yap", "resim çiz", "görsel çiz"]
     
     is_question_intent = any(t in user_query_lower for t in question_triggers)
     is_image_intent = any(kw in user_query_lower for kw in image_keywords)
 
-    # --- SEÇİLEN KİŞİLİK TARZINA GÖRE TALİMAT ÜRETİMİ ---
     persona_talimati = ""
     if "Samimi" in secilen_tarz:
         persona_talimati = "Kullanıcıyla konuşurken çok samimi, kanka tarzı, günlük argo ve samimi hitaplar ('kanka', 'reis', 'helal olsun', 'hocam') kullanan, samimi ve rahat bir dille konuş."
@@ -474,7 +477,23 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     else:
         persona_talimati = "Sakin, bilge, profesyonel, güven veren ve rahatlatıcı bir üslupla konuş."
 
-    if is_question_intent:
+    # --- EASTER EGG KONTROLÜ ---
+    easter_egg_yaniti = None
+    if "sancak altuntaş mal" in user_query_lower:
+        easter_egg_yaniti = "Evet aga"
+    elif "hürşit" in user_query_lower and "bullshit" in user_query_lower:
+        easter_egg_yaniti = "bullshit"
+    # Alternatif doğrudan eşleşmeler için
+    elif user_query_lower == "sancak altuntaş mal":
+        easter_egg_yaniti = "Evet aga"
+    elif user_query_lower == "hürşit":
+        easter_egg_yaniti = "bullshit"
+
+    if easter_egg_yaniti:
+        st.session_state.messages.append({"role": "assistant", "content": easter_egg_yaniti})
+        st.rerun()
+
+    elif is_question_intent:
         st.markdown("""
         <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;">
             ⏳ Soru hazırlanıyor...
@@ -504,7 +523,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
                 if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
                 data = json.loads(cleaned_json.strip())
-                enhanced_prompt = data.get("prompt", "a clean pure mathematical diagram, no text")
+                enhanced_prompt = data.get("prompt", "a clean geometric math diagram, no text")
             except Exception:
                 enhanced_prompt = "pure mathematical diagram, absolutely NO text or numbers, isolated on white background" 
             

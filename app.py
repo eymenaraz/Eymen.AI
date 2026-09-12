@@ -13,7 +13,7 @@ from datetime import datetime
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v4.0 Ultimate",
+    page_title="Eyx AI - v4.2 Persona & Voice",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -32,7 +32,7 @@ if "uploaded_file_data" not in st.session_state:
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
-# --- CSS VE STYLING (HIZLI, STABİL, KASMASIZ UI) ---
+# --- CSS VE STYLING ---
 st.markdown("""
 <style>
     [data-testid="stChatInput"] textarea, .stTextInput input, textarea { font-size: 16px !important; -webkit-text-size-adjust: 100%; }
@@ -86,7 +86,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Canlı Web Entegrasyonlu & Akıllı Asistan (2026)</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Sınırsız Zaman, Dinamik Kişilikler ve Sesli Asistan</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -108,20 +108,18 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- SÜRPRİZ ÖZELLİK 1: CANLI WEB ARAMA MOTORU (DuckDuckGo Destekli) ---
+# --- AKILLI CANLI WEB ARAMA MOTORU ---
 def canli_web_ara(sorgu):
     try:
         url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(sorgu)}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(response.text, 'html.parser')
-            sonuclar = []
-            for a in soup.find_all('a', class_='result__snippet', limit=3):
-                sonuclar.append(a.get_text())
-            if sonuclar:
-                return " | ".join(sonuclar)
+        resp = requests.get(url, headers=headers, timeout=4)
+        if resp.status_code == 200:
+            import re
+            snippets = re.findall(r'<a class="result__snippet[^>]*>(.*?)</a>', resp.text)
+            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:3]]
+            if clean_snippets:
+                return " | ".join(clean_snippets)
     except:
         pass
     return ""
@@ -129,16 +127,20 @@ def canli_web_ara(sorgu):
 # --- HIZLI GEMINI ÇAĞIRICI ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
     son_hata = "API anahtarı bulunamadı."
+    an_zaman = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
-    # Anlık zaman ve web verisi entegrasyonu
-    zaman_bilgisi = f"Bugünün tarihi: {datetime.now().strftime('%d %B %Y')}."
     web_bilgisi = ""
-    if any(kriter in sorgu.lower() for kriter in ["kimdir", "nedir", "kaç", "son durum", "haber", "2026", "güncel", "bugün"]):
+    trigger_words = ["kimdir", "nedir", "son durum", "haber", "güncel", "bugün", "kaç", "ne zaman", "skor", "2026"]
+    if any(k in sorgu.lower() for k in trigger_words):
         bulunan_web = canli_web_ara(sorgu)
         if bulunan_web:
-            web_bilgisi = f"\n[Güncel Web Verisi]: {bulunan_web}"
+            web_bilgisi = f"\n[Anlık Web Bilgisi]: {bulunan_web}"
 
-    tam_sistem_talimati = f"{zaman_bilgisi} {web_bilgisi} {sistem_talimati}"
+    tam_sistem_talimati = (
+        f"Şu anki sistem saati referansı: {an_zaman}. "
+        f"Sen geçmişteki tarihi olayları, bugünkü anlık durumu ve geleceğe dair planlamaları/öngörüleri tam olarak bilen evrensel bir yapay zekasın. "
+        f"Asla her olayı bugün oluyormuş gibi sabitleme; geçmişi geçmiş, geleceği gelecek, anı ise anlık olarak ele al.{web_bilgisi}\n{sistem_talimati}"
+    )
     
     for i in range(1, 11):
         key_adı = f"KEY_{i}"
@@ -259,6 +261,21 @@ with st.sidebar:
     st.markdown("<h2 style='color: #38bdf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>🛠️ MENÜ</h2>", unsafe_allow_html=True)
     st.write("---")
     
+    # --- KİŞİLİK / KONUŞMA TARZI SEÇİMİ ---
+    st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>🎭 Konuşma Tarzı (Persona)</b>", unsafe_allow_html=True)
+    secilen_tarz = st.selectbox(
+        "Tarz Seç", 
+        [
+            "Dostane / Samimi (Kanka Modu)", 
+            "Sakin / Bilge ve Profesyonel", 
+            "Sinirli / Huysuz ve Sabırsız", 
+            "Heyecanlı / Hiperaktif", 
+            "Soğuk / Robotik ve Net"
+        ], 
+        label_visibility="collapsed"
+    )
+    
+    st.write("")
     st.markdown("<b style='color: #f8fafc; font-size: 1.05rem;'>💬 Aktif Oturumlar</b>", unsafe_allow_html=True)
     chat_list = list(st.session_state.chats.keys())
     selected_chat = st.selectbox("Geçiş Yap:", chat_list, index=chat_list.index(st.session_state.current_chat), label_visibility="collapsed")
@@ -317,10 +334,9 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.write("---")
-    st.info("🚀 EYX AI v4.0 AKTİF")
+    st.info("🚀 EYX AI v4.2 AKTİF")
 
-# --- MESAJLARI GÖSTERME (Sürpriz Özellik: Sesli Okuma / Hızlı Araçlar) ---
+# --- MESAJLARI GÖSTERME (Güncellenmiş Sesli Okuma Sistemi) ---
 for idx, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -344,17 +360,28 @@ for idx, msg in enumerate(st.session_state.messages):
             if msg.get("content"):
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
                 
-                # Sürpriz Ekstra: Her Asistan Mesajına Tarayıcı Sesli Okuma ve Hızlı İşlem Düğmeleri
-                col_m1, col_m2 = st.columns([1, 6])
-                with col_m1:
-                    # Tarayıcı JavaScript Text-to-Speech Entegrasyonu (Tek tıkla sesli dinleme)
-                    safe_text = msg["content"].replace('"', "'").replace('\n', ' ')
-                    st.markdown(f"""
-                        <button onclick="let utter = new SpeechSynthesisUtterance('{safe_text}'); utter.lang = 'tr-TR'; window.speechSynthesis.speak(utter);" 
-                        style="background: #1e293b; color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
-                        🔊 Dinle
-                        </button>
-                    """, unsafe_allow_html=True)
+                # Kararlı JavaScript Konuşma Sentezi (Tarayıcı uyumlu)
+                safe_text = msg["content"].replace('"', '\\"').replace('\n', ' ').replace("'", "\\'")
+                btn_key = f"tts_btn_{idx}"
+                st.markdown(f"""
+                    <script>
+                    function playSpeech_{idx}() {{
+                        if ('speechSynthesis' in window) {{
+                            window.speechSynthesis.cancel();
+                            let text = "{safe_text}";
+                            let utterance = new SpeechSynthesisUtterance(text);
+                            utterance.lang = 'tr-TR';
+                            utterance.rate = 1.0;
+                            window.speechSynthesis.speak(utter);
+                        }} else {{
+                            alert("Tarayıcınız ses sentezlemeyi desteklemiyor.");
+                        }}
+                    }}
+                    </script>
+                    <button onclick="playSpeech_{idx}()" style="background: #1e293b; color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600;">
+                    🔊 Sesli Dinle
+                    </button>
+                """, unsafe_allow_html=True)
 
 # --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Bir şeyler sor..."):
@@ -375,6 +402,19 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     is_question_intent = any(t in user_query_lower for t in question_triggers)
     is_image_intent = (not is_question_intent) and any(kw in user_query_lower for kw in image_keywords)
 
+    # --- SEÇİLEN KİŞİLİK TARZINA GÖRE TALİMAT ÜRETİMİ ---
+    persona_talimati = ""
+    if "Samimi" in secilen_tarz:
+        persona_talimati = "Kullanıcıyla konuşurken çok samimi, kanka tarzı, günlük argo ve samimi hitaplar ('kanka', 'reis', 'helal olsun', 'hocam') kullanan, samimi ve rahat bir dille konuş."
+    elif "Sinirli" in secilen_tarz:
+        persona_talimati = "Biraz huysuz, sabırsız, her şeye homurdanan, 'ya yine mi aynı şeyi soruyorsun', 'hadi hızlı ol' gibi hafif sinirli ve sitemkar ama yine de cevabı veren bir karakterde ol."
+    elif "Heyecanlı" in secilen_tarz:
+        persona_talimati = "Aşırı enerjik, yerinde duramayan, her şeye büyük tepkiler veren ('Oooo süper!', 'Vay canına!'), coşkulu bir dille konuş."
+    elif "Soğuk" in secilen_tarz:
+        persona_talimati = "Duygusuz, tamamen robotik, kısa, net ve mesafeli bir dille yanıt ver."
+    else:
+        persona_talimati = "Sakin, bilge, profesyonel, güven veren ve rahatlatıcı bir üslupla konuş."
+
     if is_question_intent:
         st.markdown("""
         <div class="user-bubble" style="margin: 10px auto 10px 0; border-radius: 20px 20px 20px 4px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;">
@@ -393,9 +433,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
             metin_talimati = (
-                "Sen hızlı, pratik ve doğrudan yanıt veren bir yapay zeka asistanısın. "
-                "Yazım yanlışlarını otomatik düzeltip doğrudan net ve anlaşılır cevaplar ver. "
-                "Şıklar uzunsa alt alta, kısa sayılarsa yan yana yaz. Detaylı çözüm ve cevap ekle. E şıkkını kullanma."
+                f"Sen akıllı bir yapay zeka asistanısın. {persona_talimati} "
+                "Yazım yanlışlarını görmezden gelip net cevaplar ver. Şıklar uzunsa alt alta, kısa sayılarsa yan yana yaz. Detaylı çözüm ve cevap ekle. E şıkkını kullanma."
             )
             soru_metni, _ = calistir_gemini(user_query, metin_talimati, geçmiş=formatted_history)
             
@@ -406,7 +445,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 elif cleaned_json.startswith(bt): cleaned_json = cleaned_json[len(bt):]
                 if cleaned_json.endswith(bt): cleaned_json = cleaned_json[:-len(bt)]
                 data = json.loads(cleaned_json.strip())
-                enhanced_prompt = data.get("prompt", "a clean geometric math diagram, no text")
+                enhanced_prompt = data.get("prompt", "a clean pure mathematical diagram, no text")
             except Exception:
                 enhanced_prompt = "pure mathematical diagram, absolutely NO text or numbers, isolated on white background" 
             
@@ -470,10 +509,9 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     else:
         with st.spinner("Yanıtlanıyor..."):
             system_instruction = (
-                "Sen hızlı, pratik ve doğrudan bilgi veren bir yapay zeka asistanısın. "
+                f"Sen bir yapay zeka asistanısın. {persona_talimati} "
                 "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
-                "Gereksiz övgüler, 'ben süper zekiyim' gibi iddialı veya süslü laflar ASLA etme. "
-                "Google araması yapıldı veya benzeri ifadeler kullanma. Doğrudan net, sade ve anlaşılır bir Türkçe ile yanıt ver."
+                "Google araması yapıldı veya benzeri ifadeler asla kullanma."
             )
             görsel_parçası = None
             if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):

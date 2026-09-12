@@ -12,12 +12,12 @@ import io
 from datetime import datetime
 import pytz
 import asyncio
-import edge-tts if False else __import__('edge_tts')
+import edge_tts
 import tempfile
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v8.4 Edge Neural Voice Edition",
+    page_title="Eyx AI - v8.5 Edge Neural Voice Edition",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -366,7 +366,7 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v8.4 NEURAL VOICE AKTİF")
+    st.info("🚀 EYX AI v8.5 EDGE NEURAL AKTİF")
 
 # --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):
@@ -401,7 +401,6 @@ for idx, msg in enumerate(st.session_state.messages):
             if msg.get("content"):
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
                 
-                # Nöral İnsansı Ses Dinleme Butonu
                 if st.button(f"🔊 Sesli Dinle", key=f"neural_audio_{idx}"):
                     with st.spinner("Nöral insan sesi sentezleniyor..."):
                         try:

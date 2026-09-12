@@ -42,7 +42,6 @@ if "chat_personalities" not in st.session_state:
         "Kişisel Zeka": "Sen kullanıcının özel olarak yapılandırdığı kişisel yapay zekasısın."
     }
 
-# Tema renk paletleri tanımı
 if "bg_settings" not in st.session_state:
     st.session_state.bg_settings = {
         "name": "Koyu Gece (Varsayılan)",
@@ -59,6 +58,12 @@ if "image_seed" not in st.session_state:
 
 if "uploaded_file_data" not in st.session_state:
     st.session_state.uploaded_file_data = None
+
+if "user_email" not in st.session_state:
+    st.session_state.user_email = None
+
+if "user_permissions" not in st.session_state:
+    st.session_state.user_permissions = []
 
 GUNUN_SOZLERI = [
     "🚀 Kodunu yaz, sınırları zorla, geleceği şekillendir.",
@@ -108,6 +113,31 @@ st.markdown(f"""
     .stSelectbox div[data-baseweb="select"] {{
         background-color: {t_card} !important;
         color: {t_text} !important;
+    }}
+
+    .google-login-container {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #ffffff;
+        color: #3c4043 !important;
+        border: 1px solid #dadce0;
+        border-radius: 6px;
+        padding: 10px 16px;
+        font-family: 'Google Sans', Roboto, Arial, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        width: 100%;
+        margin-top: 10px;
+        text-align: center;
+    }}
+    .google-login-container img {{
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+        vertical-align: middle;
     }}
 
     .user-bubble {{
@@ -433,23 +463,55 @@ with st.sidebar:
     st.markdown("<h2 style='color: #818cf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>⚡ Eyx AI Menü</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    # Hesap / Giriş Bölümü
-    st.markdown("<b style='font-size: 1.05rem;'>👤 Hesap & Giriş</b>", unsafe_allow_html=True)
-    if "user_email" not in st.session_state:
-        st.session_state.user_email = None
-
+    # Hesap & Giriş Bölümü
+    st.markdown("<b style='font-size: 1.05rem;'>👤 Hesap & Google Bağlantısı</b>", unsafe_allow_html=True)
+    
     if st.session_state.user_email:
-        st.success(f"Giriş yapıldı:\n{st.session_state.user_email}")
-        if st.button("Çıkış Yap", use_container_width=True):
+        st.success(f"Bağlı Hesap:\n**{st.session_state.user_email}**")
+        
+        with st.expander("🛡️ Eyx AI Cihaz Yetkileri"):
+            p_gmail = "gmail" in st.session_state.user_permissions
+            p_photos = "photos" in st.session_state.user_permissions
+            
+            new_p_gmail = st.checkbox("Gmail Analiz Yetkisi", value=p_gmail)
+            new_p_photos = st.checkbox("Google Fotoğraflar Erişimi", value=p_photos)
+            
+            if st.button("Yetkileri Güncelle", use_container_width=True):
+                perms = []
+                if new_p_gmail: perms.append("gmail")
+                if new_p_photos: perms.append("photos")
+                st.session_state.user_permissions = perms
+                st.success("Yetkiler güncellendi!")
+                st.rerun()
+
+        if st.button("Hesaptan Çıkış Yap", use_container_width=True):
             st.session_state.user_email = None
+            st.session_state.user_permissions = []
             st.rerun()
     else:
-        st.info("Google hesabınızla bağlanın, sohbetleriniz senkronize olsun.")
-        if st.button("🔵 Google ile Giriş Yap", use_container_width=True):
-            # Google OAuth simülasyonu veya entegrasyon noktası
-            st.session_state.user_email = "mertcan@gmail.com"
-            st.success("Google ile başarıyla giriş yapıldı!")
-            st.rerun()
+        st.markdown("<p style='font-size: 0.85rem; opacity: 0.7;'>Sohbetleri senkronize etmek ve cihaz yetkileri vermek için Google hesabınızı bağlayın.</p>", unsafe_allow_html=True)
+        
+        # Resmi Google Logolu HTML Buton Görseli
+        st.markdown(f"""
+            <div class="google-login-container">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo"/>
+                Google Hesabını Bağla
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Seçilebilir Google Hesapları Simülasyonu
+        secilen_eposta = st.selectbox(
+            "Cihazdaki E-postalar:", 
+            ["Hesap Seçiniz...", "mertcan.ornek@gmail.com", "eyx.ai.studio@gmail.com", "diger.hesap@gmail.com"],
+            label_visibility="collapsed"
+        )
+        
+        if secilen_eposta != "Hesap Seçiniz...":
+            if st.button("Seçilen Hesapla Bağlan", use_container_width=True):
+                st.session_state.user_email = secilen_eposta
+                st.session_state.user_permissions = ["gmail", "photos"]
+                st.success(f"{secilen_eposta} başarıyla bağlandı!")
+                st.rerun()
 
     st.write("---")
     st.markdown("<b style='font-size: 1.05rem;'>💬 Sohbet Sekmeleri</b>", unsafe_allow_html=True)

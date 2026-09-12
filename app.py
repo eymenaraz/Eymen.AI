@@ -5,7 +5,6 @@ import urllib.request
 import os
 import random
 import string
-import google.generativeai as genai
 import requests
 from PIL import Image, ImageDraw, ImageFont
 import io
@@ -16,7 +15,7 @@ import edge_tts
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI v2.0 Açık Beta",
+    page_title="Eyx AI Studio",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -38,7 +37,7 @@ if "dynamic_persona_state" not in st.session_state:
 
 st.session_state.messages = st.session_state.chats[st.session_state.current_chat]
 
-# --- CSS VE STYLING (EYX AI TEMA ENTEGRASYONU) ---
+# --- CSS VE STYLING ---
 st.markdown("""
 <style>
     [data-testid="stChatInput"] textarea, .stTextInput input, textarea { font-size: 16px !important; -webkit-text-size-adjust: 100%; }
@@ -88,7 +87,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eyx">Eyx</span><span class="brand-ai">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">v3.12 - Neural Studio</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">v3.15 - Universal API Key Rotation Studio</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -151,9 +150,9 @@ def get_current_turkey_time():
     except:
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-# --- HIZLI GEMINI ÇAĞIRICI ---
+# --- EVRENSEL VE DİREKT API ROTASYON MOTORU ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
-    son_hata = "API anahtarı bulunamadı."
+    son_hata = "Sistemde geçerli API anahtarı bulunamadı."
     an_zaman = get_current_turkey_time()
     
     kaynak_verisi = chrome_motoru_ile_ara(sorgu)
@@ -166,31 +165,59 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         f"3. Bilgileri en güncel haliyle süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara veya linklere yönlendirme yapma.\n\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
+
+    contents = []
+    if geçmiş:
+        for item in geçmiş:
+            role = "user" if item.get("role") == "user" else "model"
+            parts = item.get("parts", [])
+            text_part = parts[0] if len(parts) > 0 else ""
+            contents.append({"role": role, "parts": [{"text": str(text_part)}]})
     
-    for i in range(1, 11):
-        key_adı = f"KEY_{i}"
-        if key_adı in st.secrets:
-            aktif_key = st.secrets[key_adı]
-            try:
-                genai.configure(api_key=aktif_key)
-                model = genai.GenerativeModel(
-                    model_name="gemini-2.5-flash", 
-                    system_instruction=tam_sistem_talimati
-                )
-                
-                if geçmiş is not None:
-                    chat = model.start_chat(history=geçmiş)
-                    yanit = chat.send_message([görsel_parçası, sorgu]) if görsel_parçası else chat.send_message(sorgu)
-                else:
-                    yanit = model.generate_content([görsel_parçası, sorgu]) if görsel_parçası else model.generate_content(sorgu)
-                
-                if yanit and yanit.text:
-                    return yanit.text, True
-            except Exception as e:
-                son_hata = str(e)
+    current_parts = []
+    if görsel_parçası:
+        current_parts.append({
+            "inline_data": {
+                "mime_type": görsel_parçası["mime_type"],
+                "data": urllib.parse.quote(görsel_parçası["data"])
+            }
+        })
+    current_parts.append({"text": sorgu})
+    contents.append({"role": "user", "parts": current_parts})
+
+    payload = {
+        "contents": contents,
+        "systemInstruction": {
+            "parts": [{"text": tam_sistem_talimati}]
+        }
+    }
+
+    # KEY_1'den KEY_20'ye kadar tüm formatları doğrudan REST API üzerinden dene
+    for i in range(1, 21):
+        key_adi = f"KEY_{i}"
+        if key_adi in st.secrets:
+            aktif_key = st.secrets[key_adi].strip()
+            if not aktif_key:
                 continue
-                
-    return f"Bağlantı hatası oluştu: {son_hata}", False
+            
+            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={aktif_key}"
+            
+            try:
+                response = requests.post(endpoint, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+                if response.status_code == 200:
+                    res_data = response.json()
+                    candidates = res_data.get("candidates", [])
+                    if candidates and len(candidates) > 0:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts and len(parts) > 0:
+                            return parts[0].get("text", ""), True
+                else:
+                    son_hata = f"KEY_{i} (Status {response.status_code}): {response.text}"
+            except Exception as e:
+                son_hata = f"KEY_{i} Bağlantı Hatası: {str(e)}"
+                continue
+
+    return f"Tüm API anahtarlarının kotası doldu veya bağlantı kurulamadı: {son_hata}", False
 
 def alternatif_gorsel_uret(prompt_metni):
     try:
@@ -404,7 +431,7 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("⚡ Eyx AI v3.12 AKTİF")
+    st.info("⚡ Eyx AI v3.15 (Evrensel Format Destekli Rotasyon) AKTİF")
 
 # --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):
@@ -595,7 +622,9 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             )
             görsel_parçası = None
             if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):
-                görsel_parçası = {"mime_type": st.session_state.uploaded_file_data.type, "data": st.session_state.uploaded_file_data.getvalue()}
+                import base64
+                encoded_img = base64.b64encode(st.session_state.uploaded_file_data.getvalue()).decode("utf-8")
+                görsel_parçası = {"mime_type": st.session_state.uploaded_file_data.type, "data": encoded_img}
             
             ai_response, cevap_alindi = calistir_gemini(user_query, system_instruction, geçmiş=formatted_history, görsel_parçası=görsel_parçası)
             if not cevap_alindi:

@@ -9,11 +9,12 @@ import google.generativeai as genai
 import requests
 from PIL import Image, ImageDraw, ImageFont
 import io
+from datetime import datetime
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v3.0",
-    page_icon="",
+    page_title="Eyx AI - v4.0 Ultimate",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -85,9 +86,9 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Hızlı, Akıllı ve Doğrudan Asistan</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Canlı Web Entegrasyonlu & Akıllı Asistan (2026)</p>', unsafe_allow_html=True)
 
-# --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME (ÇARPI BUTONLU) ---
+# --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
 
 if uploaded_file is not None:
@@ -107,9 +108,37 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- HIZLI GEMINI ÇAĞIRICI (Hatasız, Hafif ve Stabil) ---
+# --- SÜRPRİZ ÖZELLİK 1: CANLI WEB ARAMA MOTORU (DuckDuckGo Destekli) ---
+def canli_web_ara(sorgu):
+    try:
+        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(sorgu)}"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(response.text, 'html.parser')
+            sonuclar = []
+            for a in soup.find_all('a', class_='result__snippet', limit=3):
+                sonuclar.append(a.get_text())
+            if sonuclar:
+                return " | ".join(sonuclar)
+    except:
+        pass
+    return ""
+
+# --- HIZLI GEMINI ÇAĞIRICI ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
     son_hata = "API anahtarı bulunamadı."
+    
+    # Anlık zaman ve web verisi entegrasyonu
+    zaman_bilgisi = f"Bugünün tarihi: {datetime.now().strftime('%d %B %Y')}."
+    web_bilgisi = ""
+    if any(kriter in sorgu.lower() for kriter in ["kimdir", "nedir", "kaç", "son durum", "haber", "2026", "güncel", "bugün"]):
+        bulunan_web = canli_web_ara(sorgu)
+        if bulunan_web:
+            web_bilgisi = f"\n[Güncel Web Verisi]: {bulunan_web}"
+
+    tam_sistem_talimati = f"{zaman_bilgisi} {web_bilgisi} {sistem_talimati}"
     
     for i in range(1, 11):
         key_adı = f"KEY_{i}"
@@ -118,8 +147,8 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
             try:
                 genai.configure(api_key=aktif_key)
                 model = genai.GenerativeModel(
-                    model_name="gemini-3.5-flash", 
-                    system_instruction=sistem_talimati
+                    model_name="gemini-2.5-flash", 
+                    system_instruction=tam_sistem_talimati
                 )
                 
                 if geçmiş is not None:
@@ -289,10 +318,10 @@ with st.sidebar:
             st.success(f"**{uretilen_sifre}**")
             
     st.write("---")
-    st.info("🚀 EYX AI AKTİF")
+    st.info("🚀 EYX AI v4.0 AKTİF")
 
-# --- MESAJLARI GÖSTERME ---
-for msg in st.session_state.messages:
+# --- MESAJLARI GÖSTERME (Sürpriz Özellik: Sesli Okuma / Hızlı Araçlar) ---
+for idx, msg in enumerate(st.session_state.messages):
     if msg["role"] == "user": 
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
@@ -303,7 +332,8 @@ for msg in st.session_state.messages:
                 data=msg["image_bytes"],
                 file_name="eyx_ai_soru.png",
                 mime="image/png",
-                use_container_width=True
+                use_container_width=True,
+                key=f"dl_comp_{idx}"
             )
             if msg.get("content"):
                 with st.expander("🔑 Çözüm ve Cevap Anahtarı"):
@@ -313,6 +343,18 @@ for msg in st.session_state.messages:
                 st.image(msg["image_bytes"], use_container_width=True)
             if msg.get("content"):
                 st.markdown(f'<div class="ai-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
+                
+                # Sürpriz Ekstra: Her Asistan Mesajına Tarayıcı Sesli Okuma ve Hızlı İşlem Düğmeleri
+                col_m1, col_m2 = st.columns([1, 6])
+                with col_m1:
+                    # Tarayıcı JavaScript Text-to-Speech Entegrasyonu (Tek tıkla sesli dinleme)
+                    safe_text = msg["content"].replace('"', "'").replace('\n', ' ')
+                    st.markdown(f"""
+                        <button onclick="let utter = new SpeechSynthesisUtterance('{safe_text}'); utter.lang = 'tr-TR'; window.speechSynthesis.speak(utter);" 
+                        style="background: #1e293b; color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+                        🔊 Dinle
+                        </button>
+                    """, unsafe_allow_html=True)
 
 # --- ANA ETKİLEŞİM INPUTU ---
 if user_query := st.chat_input("Bir şeyler sor..."):

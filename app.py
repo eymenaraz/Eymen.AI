@@ -88,7 +88,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">v3.1</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">v3.3</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -110,23 +110,32 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- WEB VE SPOR ARAMA (Flashscore ve En İyi Kaynaklar Odaklı) ---
+# --- GOOGLE CHROME TABANLI GÜÇLÜ ARAMA MOTORU ---
 def akilli_kaynak_ara(sorgu):
     try:
         sorgu_terimi = sorgu
-        sport_keywords = ["maç", "skor", "futbol", "puan durumu", "fikstür", "basketbol", "canlı skor", "iddaa", "şampiyonlar ligi", "lig"]
+        sport_keywords = ["maç", "skor", "futbol", "puan durumu", "fikstür", "basketbol", "canlı skor", "iddaa", "şampiyonlar ligi", "lig", "süper lig", "gol", "oynadı", "kaç kaç bitti"]
+        
+        # Spor sorgularında doğrudan Google üzerinden flashscore verilerini ara
         if any(k in sorgu.lower() for k in sport_keywords):
             sorgu_terimi = f"site:flashscore.com.tr {sorgu}"
             
-        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(sorgu_terimi)}"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        # Google arama motoru uç noktası (Gerçek Google Chrome User-Agent ile)
+        url = f"https://www.google.com/search?q={urllib.parse.quote(sorgu_terimi)}&hl=tr"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+        }
         resp = requests.get(url, headers=headers, timeout=5)
         if resp.status_code == 200:
             import re
-            snippets = re.findall(r'<a class="result__snippet[^>]*>(.*?)</a>', resp.text)
-            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:4]]
+            # Google arama sonuçlarından snippet metinlerini çek
+            snippets = re.findall(r'<div[^>]*class="BNeawe s3v9rd AP7Wnd"[^>]*>(.*?)</div>', resp.text)
+            if not snippets:
+                snippets = re.findall(r'<span[^>]*>(.*?)</span>', resp.text)
+            
+            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:6]]
             if clean_snippets:
-                return " | ".join(clean_snippets)
+                return " | ".join([s for s in clean_snippets if len(s) > 15])
     except:
         pass
     return ""
@@ -145,13 +154,13 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
     an_zaman = get_current_turkey_time()
     
     kaynak_verisi = akilli_kaynak_ara(sorgu)
-    web_bilgisi = f"\n[En Güvenilir Kaynak / Flashscore Verisi]: {kaynak_verisi}" if kaynak_verisi else ""
+    web_bilgisi = f"\n[Google Chrome Canlı Arama Sonucu]: {kaynak_verisi}" if kaynak_verisi else ""
 
     tam_sistem_talimati = (
         f"🚨 KESİN KURALLAR 🚨:\n"
         f"1. Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
-        f"2. Spor, maç sonuçları, fikstür ve skorlarle ilgili sorularda öncelikli olarak Flashscore verilerini baz al.\n"
-        f"3. Diğer tüm konularda internetin en güncel ve en kaliteli kaynaklarındaki bilgileri süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla kullanıcıyı 'şuraya bakın', 'şu siteyi ziyaret edin' gibi dış kaynaklara veya linklere **yönlendirme yapma**.\n\n"
+        f"2. Spor, maç sonuçları, fikstür ve skor sorularında yukarıdaki Google arama sonuçlarını (Flashscore ve resmi spor siteleri odaklı) mutlak surette baz al.\n"
+        f"3. Diğer tüm konularda en güncel ve kaliteli bilgileri süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla kullanıcıyı 'şuraya bakın', 'şu siteyi ziyaret edin' gibi dış kaynaklara veya linklere **yönlendirme yapma**.\n\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
     
@@ -364,7 +373,7 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v3.1 AKTİF")
+    st.info("🚀 EYX AI v3.3 AKTİF")
 
 # --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):

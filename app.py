@@ -13,11 +13,10 @@ from datetime import datetime
 import pytz
 import asyncio
 import edge_tts
-import tempfile
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
-    page_title="Eyx AI - v8.5 Edge Neural Voice Edition",
+    page_title="Eyx AI",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -89,7 +88,7 @@ st.markdown("""
 
 # --- BAŞLIK ALANI ---
 st.markdown('<div class="logo-container"><span class="brand-eymen">Eyx</span><span class="brand-v2">AI</span></div>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Edge Neural Voice Edition (2026)</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">v3.1</p>', unsafe_allow_html=True)
 
 # --- DOSYA/FOTOĞRAF YÜKLEME VE ÖNİZLEME ---
 uploaded_file = st.file_uploader("📁 Dosya veya Fotoğraf Yükle", type=["png", "jpg", "jpeg", "pdf", "txt", "webp"], help="Sadece analiz içindir.", label_visibility="collapsed")
@@ -111,10 +110,15 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- WEB ARAMA ---
-def canli_web_ara(sorgu):
+# --- WEB VE SPOR ARAMA (Flashscore ve En İyi Kaynaklar Odaklı) ---
+def akilli_kaynak_ara(sorgu):
     try:
-        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(sorgu)}"
+        sorgu_terimi = sorgu
+        sport_keywords = ["maç", "skor", "futbol", "puan durumu", "fikstür", "basketbol", "canlı skor", "iddaa", "şampiyonlar ligi", "lig"]
+        if any(k in sorgu.lower() for k in sport_keywords):
+            sorgu_terimi = f"site:flashscore.com.tr {sorgu}"
+            
+        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(sorgu_terimi)}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         resp = requests.get(url, headers=headers, timeout=5)
         if resp.status_code == 200:
@@ -140,20 +144,14 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
     son_hata = "API anahtarı bulunamadı."
     an_zaman = get_current_turkey_time()
     
-    web_bilgisi = ""
-    trigger_words = [
-        "kimdir", "nedir", "son durum", "haber", "güncel", "bugün", "kaç", "ne zaman", 
-        "skor", "maç", "oyuncu", "futbolcu", "transfer", "2026", "tarih", "şimdi", "gecenin", "saat", "bugün günlerden"
-    ]
-    if any(k in sorgu.lower() for k in trigger_words):
-        bulunan_web = canli_web_ara(sorgu)
-        if bulunan_web:
-            web_bilgisi = f"\n[Güncel Canlı Veri / Web Bilgisi]: {bulunan_web}"
+    kaynak_verisi = akilli_kaynak_ara(sorgu)
+    web_bilgisi = f"\n[En Güvenilir Kaynak / Flashscore Verisi]: {kaynak_verisi}" if kaynak_verisi else ""
 
     tam_sistem_talimati = (
-        f"🚨 KESİN ZAMAN KURALI 🚨:\n"
-        f"Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
-        f"Kullanıcı tarih, saat veya anlık bir durum sorduğunda ASLA geçmiş yılları baz alma. Mutlaka yukarıdaki anı ({an_zaman}) baz al.\n\n"
+        f"🚨 KESİN KURALLAR 🚨:\n"
+        f"1. Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
+        f"2. Spor, maç sonuçları, fikstür ve skorlarle ilgili sorularda öncelikli olarak Flashscore verilerini baz al.\n"
+        f"3. Diğer tüm konularda internetin en güncel ve en kaliteli kaynaklarındaki bilgileri süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla kullanıcıyı 'şuraya bakın', 'şu siteyi ziyaret edin' gibi dış kaynaklara veya linklere **yönlendirme yapma**.\n\n"
         f"{web_bilgisi}\n{sistem_talimati}"
     )
     
@@ -366,7 +364,7 @@ with st.sidebar:
             uretilen_sifre = ''.join(random.choice(karakterler) for _ in range(hane_sayisi))
             st.success(f"**{uretilen_sifre}**")
             
-    st.info("🚀 EYX AI v8.5 EDGE NEURAL AKTİF")
+    st.info("🚀 EYX AI v3.1 AKTİF")
 
 # --- ASENKRON EDGE-TTS ÇALIŞTIRICI ---
 async def generate_edge_audio_bytes(text, voice_id):
@@ -540,7 +538,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         if img_success and raw_image_bytes:
             st.session_state.messages.append({
                 "role": "assistant", 
-                "content": "İşte görselin hazır! 🎨", 
+                "content": "İşte görselin aradığın kalitede hazır! 🎨", 
                 "image_bytes": raw_image_bytes,
                 "is_composite": False
             })
@@ -555,7 +553,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             system_instruction = (
                 f"Sen bir yapay zeka asistanısın. {persona_talimati} "
                 "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
-                "Kullanıcı standart sohbet veya bilgi sorusu soruyorsa doğrudan normal cevap ver, asla kendiliğinden zihin haritası veya şeması oluşturma."
+                "Asla kullanıcıyı harici web sitelerine veya linklere yönlendirme; bilgileri en güvenilir kaynaklardan süzerek doğrudan net cevabı kendin ver."
             )
             görsel_parçası = None
             if st.session_state.uploaded_file_data and st.session_state.uploaded_file_data.type.startswith("image/"):

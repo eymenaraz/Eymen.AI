@@ -22,7 +22,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- KALICI HAFIZA & STATE YÖNETİMİ (localStorage Destekli) ---
+# --- KALICI HAFIZA & STATE YÖNETİMİ ---
 if "chats" not in st.session_state:
     st.session_state.chats = {
         "Genel Sohbet": [],
@@ -59,7 +59,6 @@ if "image_seed" not in st.session_state:
 if "uploaded_file_data" not in st.session_state:
     st.session_state.uploaded_file_data = None
 
-# Kalıcılık (localStorage Entegrasyonu)
 if "user_email" not in st.session_state:
     st.session_state.user_email = None
 
@@ -227,11 +226,9 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- TARAYICI BELLEĞİ (LocalStorage) KONTROLÜ ---
-# Sayfa yenilense veya kapatılıp açılsa bile bilgileri korumak için JavaScript localStorage köprüsü kurulur
+# --- TARAYICI BELLEĞİ KONTROLÜ ---
 st.markdown("""
 <script>
-    // localStorage'dan kayıtlı verileri okuma ve aktarma simülasyonu
     const savedEmail = localStorage.getItem('eyx_user_email');
     if (savedEmail && !window.location.search.includes('email=')) {
         const url = new URL(window.location.href);
@@ -241,7 +238,6 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-# URL / LocalStorage Parametrelerini Yakala
 query_params = st.query_params
 if "email" in query_params and not st.session_state.user_email:
     st.session_state.user_email = query_params["email"]
@@ -276,39 +272,6 @@ if st.session_state.uploaded_file_data is not None:
             st.session_state.uploaded_file_data = None
             st.rerun()
 
-# --- WEB ARAMA VE ZAMAN MOTORU ---
-def chrome_motoru_ile_ara(sorgu):
-    try:
-        sorgu_terimi = sorgu
-        sorgu_lower = sorgu.lower()
-        sport_keywords = [
-            "maç", "skor", "futbol", "puan durumu", "fikstür", "basketbol", 
-            "canlı skor", "iddaa", "şampiyonlar ligi", "lig", "süper lig", 
-            "gol", "oynadı", "kaç kaç", "bitti", "kazandı", "maçı", "derbi",
-            "real madrid", "barcelona", "galatasaray", "fenerbahçe", "beşiktaş", "trabzonspor"
-        ]
-        if any(k in sorgu_lower for k in sport_keywords):
-            sorgu_terimi = f"{sorgu} maç sonucu puan durumu mackolik flashscore"
-            
-        url = f"https://www.google.com/search?q={urllib.parse.quote(sorgu_terimi)}&hl=tr&gl=tr"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
-        }
-        resp = requests.get(url, headers=headers, timeout=6)
-        if resp.status_code == 200:
-            import re
-            snippets = re.findall(r'<div[^>]*class="BNeawe s3v9rd AP7Wnd"[^>]*>(.*?)</div>', resp.text)
-            if not snippets:
-                snippets = re.findall(r'<span[^>]*>(.*?)</span>', resp.text)
-            
-            clean_snippets = [re.sub(r'<.*?>', '', s) for s in snippets[:10]]
-            if clean_snippets:
-                return " | ".join([s for s in clean_snippets if len(s) > 5])
-    except:
-        pass
-    return ""
-
 def get_current_turkey_time():
     try:
         tr_tz = pytz.timezone('Europe/Istanbul')
@@ -317,20 +280,16 @@ def get_current_turkey_time():
     except:
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-# --- API ROTASYON MOTORU ---
+# --- HIZLANDIRILMIŞ HİBRİT GEMINI MOTORU ---
 def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=None):
-    son_hata = "Sistemde geçerli API anahtarı bulunamadı."
     an_zaman = get_current_turkey_time()
     
-    kaynak_verisi = chrome_motoru_ile_ara(sorgu)
-    web_bilgisi = f"\n[Canlı Veri Tabanı ve Web Sonucu]: {kaynak_verisi}" if kaynak_verisi else ""
-
     tam_sistem_talimati = (
         f"🚨 KESİN KURALLAR 🚨:\n"
         f"1. Bulunduğun Anın Kesin Türkiye Saati (UTC+3): {an_zaman}.\n"
-        f"2. Kullanıcı sana ne soruyorsa SADECE o konuya odaklan. Tek kelimelik veya kısa mesajlara sadece o kelimenin anlamıyla cevap ver.\n"
-        f"3. Bilgileri en güncel haliyle süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**. Asla dış kaynaklara yönlendirme yapma.\n\n"
-        f"{web_bilgisi}\n{sistem_talimati}"
+        f"2. Kullanıcı ne soruyorsa SADECE o konuya odaklan.\n"
+        f"3. Bilgileri en güncel haliyle süzerek **net, direkt ve kesin yanıtı doğrudan sen ver**.\n\n"
+        f"{sistem_talimati}"
     )
 
     contents = []
@@ -359,37 +318,33 @@ def calistir_gemini(sorgu, sistem_talimati, geçmiş=None, görsel_parçası=Non
         }
     }
 
-    modeller = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
-
-    for model_adi in modeller:
-        for i in range(1, 21):
-            key_adi = f"KEY_{i}"
-            if key_adi in st.secrets:
-                aktif_key = st.secrets[key_adi].strip()
-                if not aktif_key:
-                    continue
+    # Hızlı ve öncelikli anahtar havuzu taraması (Doğrudan KEY_1'den başlayıp anında yanıt alır)
+    for i in range(1, 21):
+        key_adi = f"KEY_{i}"
+        if key_adi in st.secrets:
+            aktif_key = st.secrets[key_adi].strip()
+            if not aktif_key:
+                continue
+            
+            # En hızlı flash modeline doğrudan bağlanılır
+            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={aktif_key}"
+            
+            try:
+                response = requests.post(endpoint, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 
-                endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_adi}:generateContent?key={aktif_key}"
-                
-                try:
-                    response = requests.post(endpoint, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
-                    
-                    if response.status_code == 200:
-                        res_data = response.json()
-                        candidates = res_data.get("candidates", [])
-                        if candidates and len(candidates) > 0:
-                            parts = candidates[0].get("content", {}).get("parts", [])
-                            if parts and len(parts) > 0:
-                                return parts[0].get("text", ""), True
-                    elif response.status_code == 429:
-                        time.sleep(1.5)
-                        continue
-                    else:
-                        son_hata = f"KEY_{i} (Status {response.status_code}): {response.text}"
-                except Exception as e:
+                if response.status_code == 200:
+                    res_data = response.json()
+                    candidates = res_data.get("candidates", [])
+                    if candidates and len(candidates) > 0:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts and len(parts) > 0:
+                            return parts[0].get("text", ""), True
+                elif response.status_code == 429:
                     continue
+            except Exception:
+                continue
 
-    return "Tüm API anahtarlarının dakikalık istek kotası doldu. Lütfen 30 saniye bekleyip tekrar deneyin.", False
+    return "Tüm API anahtarlarının istek kotası doldu. Lütfen biraz bekleyin.", False
 
 def alternatif_gorsel_uret(prompt_metni):
     try:
@@ -399,7 +354,7 @@ def alternatif_gorsel_uret(prompt_metni):
             f"https://pollinations.ai/p/{encoded_prompt}?width=1024&height=1024&seed={random.randint(1,999999)}"
         ]
         for url in servis_urleri:
-            resp = requests.get(url, timeout=25)
+            resp = requests.get(url, timeout=20)
             if resp.status_code == 200 and len(resp.content) > 1000:
                 return resp.content, True
     except:
@@ -478,12 +433,11 @@ def tek_gorsel_olustur(diyagram_bytes, soru_metni):
     except Exception:
         return diyagram_bytes
 
-# --- SIDEBAR & KİŞİSELLEŞTİRME MENÜSÜ ---
+# --- SIDEBAR & KİŞİSELLEŞTİRME ---
 with st.sidebar:
     st.markdown("<h2 style='color: #818cf8; text-align: center; font-size: 1.5rem; margin-top:10px;'>⚡ Eyx AI Menü</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    # Hesap & Giriş Bölümü (Kalıcı)
     st.markdown("<b style='font-size: 1.05rem;'>👤 Hesap & Google Bağlantısı</b>", unsafe_allow_html=True)
     
     if st.session_state.user_email:
@@ -508,7 +462,6 @@ with st.sidebar:
             st.session_state.user_email = None
             st.session_state.user_permissions = []
             st.query_params.clear()
-            # Tarayıcı hafızasını da temizle
             st.markdown("""
             <script>
                 localStorage.removeItem('eyx_user_email');
@@ -534,7 +487,6 @@ with st.sidebar:
                 st.session_state.user_email = clean_email
                 st.session_state.user_permissions = ["gmail", "photos"]
                 
-                # Tarayıcı localStorage hafızasına kaydet (Uygulamadan çıkılsa bile kalıcı olması için)
                 st.markdown(f"""
                 <script>
                     localStorage.setItem('eyx_user_email', '{clean_email}');
@@ -571,8 +523,6 @@ with st.sidebar:
 
     st.write("---")
     st.markdown("<b style='font-size: 1.05rem;'>🧠 Kişisel Zeka Ayarı</b>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 0.85rem; opacity: 0.7;'>Aşağıya yazarak 'Kişisel Zeka' sekmesindeki AI karakterini dilediğin gibi şekillendir.</p>", unsafe_allow_html=True)
-    
     mevcut_kisisel_prompt = st.session_state.chat_personalities.get("Kişisel Zeka", "")
     yeni_kisisel_prompt = st.text_area("Kişisel Zeka Talimatı:", value=mevcut_kisisel_prompt, height=90)
     if st.button("Kaydet & Güncelle", use_container_width=True):
@@ -581,7 +531,6 @@ with st.sidebar:
 
     st.write("---")
     st.markdown("<b style='font-size: 1.05rem;'>🎨 Arka Plan ve Tema</b>", unsafe_allow_html=True)
-    
     tema_secenekleri = ["Koyu Gece (Varsayılan)", "Derin Uzay", "Cyberpunk Neon", "Minimal Beyaz"]
     mevcut_tema_adi = st.session_state.bg_settings.get("name", "Koyu Gece (Varsayılan)")
     tema_secimi = st.selectbox("Renk Teması Seç:", tema_secenekleri, index=tema_secenekleri.index(mevcut_tema_adi), label_visibility="collapsed")
@@ -615,7 +564,6 @@ with st.sidebar:
 
     st.write("---")
     st.markdown("<h3 style='color: #818cf8; font-size: 1.2rem; margin-top:10px;'>🧰 Eyx Araçları</h3>", unsafe_allow_html=True)
-    
     if st.button("🎲 Seed Yenile", use_container_width=True):
         st.session_state.image_seed = random.randint(1, 99999999)
         st.success("Seed yenilendi!")
@@ -624,8 +572,7 @@ with st.sidebar:
         qr_metin = st.text_input("Link veya Metin girin:")
         if st.button("Kodu Üret", use_container_width=True):
             if qr_metin:
-                encoded_url = urllib.parse.quote(qr_metin)
-                api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={encoded_url}"
+                api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(qr_metin)}"
                 st.image(api_url, caption="QR Kodunuz Hazır!")
 
     with st.expander("🔑 Şifre Üretici"):
@@ -725,10 +672,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
             )
             ai_json_response, success = calistir_gemini(user_query, prompt_instruction, geçmiş=formatted_history)
             
-            metin_talimati = (
-                f"{aktif_persona} "
-                "Yazım yanlışlarını görmezden gelip net cevaplar ver. Detaylı çözüm ve cevap ekle."
-            )
+            metin_talimati = f"{aktif_persona} Yazım yanlışlarını görmezden gelip net cevaplar ver. Detaylı çözüm ve cevap ekle."
             soru_metni, _ = calistir_gemini(user_query, metin_talimati, geçmiş=formatted_history)
             
             try:
@@ -789,7 +733,7 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         if img_success and raw_image_bytes:
             st.session_state.messages.append({
                 "role": "assistant", 
-                "content": "İşte görselin hazır! 🎨", 
+                "content": "İşte görselin aradığın kalitede hazır! 🎨", 
                 "image_bytes": raw_image_bytes,
                 "is_composite": False
             })
@@ -810,7 +754,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         system_instruction = (
             f"{aktif_persona} "
             "Kullanıcının yazdığı metinlerdeki yazım yanlışlarını önemsemeden ne demek istediğini anla. "
-            "SADECE kullanıcı futbol veya sporla ilgili bir soru sorarsa arka plandaki canlı motor verilerini devreye sok. "
             "Asla kullanıcıyı harici web sitelerine yönlendirme; doğrudan net cevabı kendin ver."
         )
         görsel_parçası = None
@@ -829,4 +772,4 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
 # --- ALT BİLGİ ---
 st.write("---")
-st.markdown("<p style='text-align: center; font-size: 0.9rem; opacity: 0.7;'>Eyx AI  © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 0.9rem; opacity: 0.7;'>Eyx AI Studio © 2026</p>", unsafe_allow_html=True)
